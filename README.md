@@ -4,6 +4,7 @@
 
 ```shell
 conda create -f environment.yaml
+conda activate cofa_venv
 ```
 
 ## 🚀 Fix Issues
@@ -42,5 +43,5 @@ CoFA enforces a series of pre-commit checks that our contributors should follow:
 
 ```shell
 pre-commit install  # install pre-commit itself
-pre-commit install-hooks  # install our pre-commit hooks
+pre-commit install-hooks  # install our pre-commit checkers
 ```
