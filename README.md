@@ -39,9 +39,12 @@ python -m cofa.repoet -i <issue_yaml> -e <eval_script> <repository>
 
 ## 👨‍💻‍ Contributions
 
-CoFA enforces a series of pre-commit checks that our contributors should follow: 
+CoFA enforces a series of pre-commit checks that our contributors should follow. Before contributing to this project, developers are required to install our checkers:
 
 ```shell
 pre-commit install  # install pre-commit itself
 pre-commit install-hooks  # install our pre-commit checkers
 ```
+
+Below are checkers/hooks we have enabled:
++ Python: We use Ruff's lint and format the code; check [all rules](https://docs.astral.sh/ruff/rules/) if your commits fail.
