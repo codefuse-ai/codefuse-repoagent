@@ -27,3 +27,9 @@ dependencies:
       - pre-commit==4.0.1
       - pyyaml==6.0.2
       - virtualenv==20.27.1
+      - pyjson5==1.6.7
+      - rich==13.9.4
+      - python-dotenv==1.0.1
+      - RapidFuzz==3.10.1
+      - joblib==1.4.2
+      - intervaltree==3.1.0
