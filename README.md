@@ -26,12 +26,12 @@ python -m cofa.swell -i <issue_yaml> -e <eval_script> -M 20 <repository>
 CoFA can try fixing issues in SWE-bench where `<swe-bench-id>` can be one of `lite`, `verified`, and `full`:
 
 ```shell
-python -m cofa.swekit -i <issue_id> -M 20 <swe-bench-id> 
+python -m cofa.swekit -i <issue_id> -M 20 <swe-bench-id>
 ```
 
 ## 🔍 Retrieve Context
 
-CoFA's context retriever can be executed in separate. The arguments and options are the same as Swell: 
+CoFA's context retriever can be executed in separate. The arguments and options are the same as Swell:
 
 ```shell
 python -m cofa.repoet -i <issue_yaml> -e <eval_script> <repository>
@@ -47,5 +47,6 @@ pre-commit install-hooks  # install our pre-commit checkers
 ```
 
 Below are checkers/hooks we have enabled:
-+ Python: We use Ruff's lint and format the code; check [all rules](https://docs.astral.sh/ruff/rules/) if your commits fail. Check [ruff.md](../docs/ruff.md) to configure Ruff in PyCharm. 
-+ Commit: We apply Conventional Commits to format all commit messages; check [the rules](https://www.conventionalcommits.org/) to configure its format. 
++ Python: We use Ruff's lint and format the code; check [all rules](https://docs.astral.sh/ruff/rules/) if your commits fail. Check [ruff.md](../docs/ruff.md) to configure Ruff in PyCharm.
++ Commit: We apply Conventional Commits to format all commit messages; check [the rules](https://www.conventionalcommits.org/) to configure its format.
++ MISC: We also apply some misc checkers for example YAML.
