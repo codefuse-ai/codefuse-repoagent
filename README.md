@@ -47,6 +47,6 @@ pre-commit install-hooks  # install our pre-commit checkers
 ```
 
 Below are checkers/hooks we have enabled:
-+ Python: We use Ruff's lint and format the code; check [all rules](https://docs.astral.sh/ruff/rules/) if your commits fail. Check [ruff.md](../docs/ruff.md) to configure Ruff in PyCharm.
++ Python: We use Ruff's lint and format the code; check [all rules](https://docs.astral.sh/ruff/rules/) if your commits fail. Check [ruff.md](./docs/ruff.md) to configure Ruff in PyCharm.
 + Commit: We apply Conventional Commits to format all commit messages; check [the rules](https://www.conventionalcommits.org/) to configure its format.
 + MISC: We also apply some misc checkers for example YAML.
