@@ -4,26 +4,21 @@ FilePath = Path
 
 
 class SnippetPath:
-    def __init__(self, path: str):
-        self.path = path
-
-        a, b = path.split(":")
-        c, d = b.split("-")
-
-        self._file_path = FilePath(a)
-        self._start_line = int(c)
-        self._end_line = int(d)
+    def __init__(self, file: FilePath, start: int, end: int):
+        self._file_path = file
+        self._start_line = start
+        self._end_line = end
 
     @property
-    def file_path(self):
+    def file_path(self) -> FilePath:
         return self._file_path
 
     @property
-    def start_line(self):
+    def start_line(self) -> int:
         return self._start_line
 
     @property
-    def end_line(self):
+    def end_line(self) -> int:
         return self._end_line
 
     def size(self):
@@ -32,5 +27,10 @@ class SnippetPath:
     def as_tuple(self):
         return str(self.file_path), self._start_line, self._end_line
 
+    def __eq__(self, other):
+        if not isinstance(other, SnippetPath):
+            return False
+        return str(self) == str(other)
+
     def __str__(self):
-        return self.path
+        return f"{self.file_path}:{self.start_line}-{self.end_line}"
