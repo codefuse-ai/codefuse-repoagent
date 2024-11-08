@@ -5,13 +5,14 @@ import random
 from abc import abstractmethod
 from collections import namedtuple
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import rapidfuzz
 
 from cofa.base.paths import SnippetPath, FilePath
 from cofa.config import CofaConfig
-from cofa.utils import sanitize_content
+from cofa.splits.factory import SplFactory
+from cofa.utils import sanitize_content, CannotReachHereError
 
 RepoTup = namedtuple("RepoTup", ("org", "name", "path"))
 
@@ -28,6 +29,7 @@ class RepoBase:
         self.repo_name = repo.name
         self.repo_path = str(FilePath(repo.path).resolve())
         self.excluded_patterns = excluded_patterns or []
+        self._snippets = None
 
     @property
     def full_name(self) -> str:
@@ -102,7 +104,49 @@ class RepoBase:
             dir_path += "/"
         return dir_path in self.get_directory_list(incl_repo_dir=True)
 
-    def get_snippet_list(self) -> List[str]: ...
+    def get_snippet_list(self) -> List[str]:
+        self._ensure_repository_chunked()
+        return [str(s) for s in self._snippets]
+
+    def get_snippet_tuple_list(self) -> List[Tuple[str, int, int]]:
+        self._ensure_repository_chunked()
+        return [(s.file_path, s.start_line, s.end_line) for s in self._snippets]
+
+    def get_file_snippet_list(self, file_path: str) -> List[str]:
+        return [str(s) for s in self._snippets if str(s.file_path) == file_path]
+
+    def get_file_snippet_tuple_list(self, file_path: str) -> List[Tuple[int, int]]:
+        return [
+            (s.start_line, s.end_line)
+            for s in self._snippets
+            if str(s.file_path) == file_path
+        ]
+
+    def resize_file_snippets(self, file_path: str, snippet_size: int = -1) -> List[str]:
+        self._ensure_repository_chunked()
+        if snippet_size <= 0:
+            return self.get_file_snippet_list(file_path)
+        # Merge consecutive snippets unless their size is snippet_size
+        snippet_tuples, last_tuple = [], None
+        for curr_tuple in self.get_file_snippet_tuple_list(file_path):
+            if last_tuple is None:
+                last_tuple = curr_tuple
+                continue
+            if last_tuple[1] != curr_tuple[0]:
+                raise CannotReachHereError(
+                    f"The current snippet does not directly follow the last snippet: "
+                    f"last_tuple.end={last_tuple[2]} while curr_tuple.start={curr_tuple[1]} !"
+                )
+            curr_size = curr_tuple[1] - curr_tuple[0]
+            last_size = last_tuple[1] - last_tuple[0]
+            if last_size + curr_size <= snippet_size:
+                last_tuple = (last_tuple[0], curr_tuple[1])
+            else:
+                snippet_tuples.append(last_tuple)
+                last_tuple = curr_tuple
+        if last_tuple:
+            snippet_tuples.append(last_tuple)
+        return [f"{file_path}:{t[0]}-{t[1]}" for t in snippet_tuples]
 
     def get_file_content(
         self, file_path: str, add_lines: bool = False, san_cont: bool = False
@@ -128,7 +172,7 @@ class RepoBase:
         add_separators: bool = True,
         san_cont: bool = False,
     ) -> str:
-        snippet_path = SnippetPath(snippet_path)
+        snippet_path = SnippetPath.from_str(snippet_path)
         return RepoBase.extract_snippet_lines(
             self.get_file_content(
                 str(snippet_path.file_path), add_lines=add_lines, san_cont=san_cont
@@ -218,7 +262,7 @@ class RepoBase:
         ):
             if len(files) == limit:
                 return files
-            f = str(SnippetPath(s).file_path)
+            f = str(SnippetPath.from_str(s).file_path)
             if f not in files:
                 files.append(f)
         return files
@@ -266,3 +310,10 @@ class RepoBase:
             if s not in sorted_final_scores:
                 sorted_final_scores.append(s)
         return sorted_final_scores
+
+    def _ensure_repository_chunked(self):
+        if self._snippets:
+            return
+        self._snippets = []
+        for file in self.get_file_list():
+            self._snippets.extend(SplFactory.create(FilePath(file)).split())

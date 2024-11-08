@@ -9,6 +9,12 @@ class SnippetPath:
         self._start_line = start
         self._end_line = end
 
+    @staticmethod
+    def from_str(snp_path):
+        f, t = snp_path.split(":")
+        s, e = t.split("-")
+        return SnippetPath(FilePath(f), int(s), int(e))
+
     @property
     def file_path(self) -> FilePath:
         return self._file_path
