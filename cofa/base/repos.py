@@ -29,7 +29,7 @@ class RepoBase:
         self.repo_name = repo.name
         self.repo_path = str(FilePath(repo.path).resolve())
         self.excluded_patterns = excluded_patterns or []
-        self._snippets = None
+        self._snippets: List[SnippetPath] = []
 
     @property
     def full_name(self) -> str:
@@ -83,19 +83,15 @@ class RepoBase:
     def has_file(self, file_path: str) -> bool:
         return file_path in self.get_all_files()
 
-    def get_all_directories(
-        self, incl_repo_dir: bool = False, innermost: bool = False
-    ) -> List[str]:
-        if innermost:  # Only return innermost directories, without intermediate ones
-            dirs = {f[: f.rindex("/") + 1] for f in self.get_all_files() if "/" in f}
-        else:  # Return all existing directories
-            dirs = {
-                dir_path[len(self.repo_path) + 1 :] + "/"
-                for dir_path in glob.iglob(f"{self.repo_path}/**", recursive=True)
-                if os.path.isdir(dir_path)
-            }
-            dirs = {dir_path for dir_path in dirs if not self.should_exclude(dir_path)}
-        if incl_repo_dir:  # Add the project directory into the results
+    def get_all_directories(self, incl_repo_dir: bool = False) -> List[str]:
+        dirs = {
+            dir_path[len(self.repo_path) + 1 :] + "/"
+            for dir_path in glob.iglob(f"{self.repo_path}/**", recursive=True)
+            if os.path.isdir(dir_path)
+        }
+        dirs = {dir_path for dir_path in dirs if not self.should_exclude(dir_path)}
+        # Add the project directory into the results
+        if incl_repo_dir:
             dirs.add("/")
         return [dir_ for dir_ in dirs]
 
@@ -110,7 +106,7 @@ class RepoBase:
 
     def get_all_snippet_tuples(self) -> List[Tuple[str, int, int]]:
         self._ensure_repository_chunked()
-        return [(s.file_path, s.start_line, s.end_line) for s in self._snippets]
+        return [(str(s.file_path), s.start_line, s.end_line) for s in self._snippets]
 
     def get_all_snippets_of_file(self, file_path: str) -> List[str]:
         return [str(s) for s in self._snippets if str(s.file_path) == file_path]
@@ -315,4 +311,13 @@ class RepoBase:
             return
         self._snippets = []
         for file in self.get_all_files():
-            self._snippets.extend(SplFactory.create(FilePath(file)).split())
+            self._snippets.extend(
+                [
+                    SnippetPath(
+                        s.file_path.relative_to(self.repo_path),
+                        s.start_line,
+                        s.end_line,
+                    )
+                    for s in SplFactory.create(FilePath(self.repo_path) / file).split()
+                ]
+            )
