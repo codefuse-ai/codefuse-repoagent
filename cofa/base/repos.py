@@ -71,7 +71,7 @@ class RepoBase:
 
         return format_file_tree(FilePath(self.repo_path), depth=0)
 
-    def get_file_list(self) -> List[str]:
+    def get_all_files(self) -> List[str]:
         files = [
             file_path[len(self.repo_path) + 1 :]
             for file_path in glob.iglob(f"{self.repo_path}/**", recursive=True)
@@ -81,13 +81,13 @@ class RepoBase:
         return files
 
     def has_file(self, file_path: str) -> bool:
-        return file_path in self.get_file_list()
+        return file_path in self.get_all_files()
 
-    def get_directory_list(
+    def get_all_directories(
         self, incl_repo_dir: bool = False, innermost: bool = False
     ) -> List[str]:
         if innermost:  # Only return innermost directories, without intermediate ones
-            dirs = {f[: f.rindex("/") + 1] for f in self.get_file_list() if "/" in f}
+            dirs = {f[: f.rindex("/") + 1] for f in self.get_all_files() if "/" in f}
         else:  # Return all existing directories
             dirs = {
                 dir_path[len(self.repo_path) + 1 :] + "/"
@@ -102,33 +102,35 @@ class RepoBase:
     def has_directory(self, dir_path: str) -> bool:
         if not dir_path.endswith("/"):
             dir_path += "/"
-        return dir_path in self.get_directory_list(incl_repo_dir=True)
+        return dir_path in self.get_all_directories(incl_repo_dir=True)
 
-    def get_snippet_list(self) -> List[str]:
+    def get_all_snippets(self) -> List[str]:
         self._ensure_repository_chunked()
         return [str(s) for s in self._snippets]
 
-    def get_snippet_tuple_list(self) -> List[Tuple[str, int, int]]:
+    def get_all_snippet_tuples(self) -> List[Tuple[str, int, int]]:
         self._ensure_repository_chunked()
         return [(s.file_path, s.start_line, s.end_line) for s in self._snippets]
 
-    def get_file_snippet_list(self, file_path: str) -> List[str]:
+    def get_all_snippets_of_file(self, file_path: str) -> List[str]:
         return [str(s) for s in self._snippets if str(s.file_path) == file_path]
 
-    def get_file_snippet_tuple_list(self, file_path: str) -> List[Tuple[int, int]]:
+    def get_all_snippet_tuples_of_file(self, file_path: str) -> List[Tuple[int, int]]:
         return [
             (s.start_line, s.end_line)
             for s in self._snippets
             if str(s.file_path) == file_path
         ]
 
-    def resize_file_snippets(self, file_path: str, snippet_size: int = -1) -> List[str]:
+    def get_all_snippets_of_file_with_size(
+        self, file_path: str, snippet_size: int = -1
+    ) -> List[str]:
         self._ensure_repository_chunked()
         if snippet_size <= 0:
-            return self.get_file_snippet_list(file_path)
+            return self.get_all_snippets_of_file(file_path)
         # Merge consecutive snippets unless their size is snippet_size
         snippet_tuples, last_tuple = [], None
-        for curr_tuple in self.get_file_snippet_tuple_list(file_path):
+        for curr_tuple in self.get_all_snippet_tuples_of_file(file_path):
             if last_tuple is None:
                 last_tuple = curr_tuple
                 continue
@@ -146,7 +148,9 @@ class RepoBase:
                 last_tuple = curr_tuple
         if last_tuple:
             snippet_tuples.append(last_tuple)
-        return [f"{file_path}:{t[0]}-{t[1]}" for t in snippet_tuples]
+        return [
+            str(SnippetPath(FilePath(file_path), t[0], t[1])) for t in snippet_tuples
+        ]
 
     def get_file_content(
         self, file_path: str, add_lines: bool = False, san_cont: bool = False
@@ -215,7 +219,7 @@ class RepoBase:
     ) -> List[str]:
         return self._find_similar_paths(
             file_path,
-            self.get_file_list(),
+            self.get_all_files(),
             limit=limit,
             return_abs_paths=return_abs_paths,
             included_patterns=included_patterns,
@@ -230,24 +234,19 @@ class RepoBase:
     ) -> List[str]:
         return self._find_similar_paths(
             directory_path,
-            self.get_directory_list(),
+            self.get_all_directories(),
             limit=limit,
             return_abs_paths=return_abs_paths,
             included_patterns=included_patterns,
         )
 
     def get_rand_file(self) -> str:
-        dir_list = self.get_file_list()
+        dir_list = self.get_all_files()
         return dir_list[random.randint(0, len(dir_list) - 1)]
 
     def get_rand_directory(self):
-        dir_list = self.get_directory_list()
+        dir_list = self.get_all_directories()
         return dir_list[random.randint(0, len(dir_list) - 1)]
-
-    @abstractmethod
-    def get_file_snippets(
-        self, file_path: str, snippet_size: int = -1
-    ) -> List[str]: ...
 
     @abstractmethod
     def search_snippets(
@@ -315,5 +314,5 @@ class RepoBase:
         if self._snippets:
             return
         self._snippets = []
-        for file in self.get_file_list():
+        for file in self.get_all_files():
             self._snippets.extend(SplFactory.create(FilePath(file)).split())
