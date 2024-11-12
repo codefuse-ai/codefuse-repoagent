@@ -14,7 +14,7 @@ class BoxedConsoleConfigs:
     out_dir: Optional[str] = None  # If set, the console will print to a file
 
 
-class BoxedConsoleAPI:
+class BoxedConsoleBase:
     @abstractmethod
     def printb(self, *args, **kwargs): ...
 
@@ -31,7 +31,7 @@ class BoxedConsoleAPI:
         return f"{curr_thr.name}@{curr_thr.native_id}"
 
 
-class MockBoxedConsole(BoxedConsoleAPI):
+class MockConsole(BoxedConsoleBase):
     def printb(self, *args, **kwargs):
         pass
 
@@ -39,7 +39,7 @@ class MockBoxedConsole(BoxedConsoleAPI):
         pass
 
 
-class FileConsole(BoxedConsoleAPI):
+class FileConsole(BoxedConsoleBase):
     def __init__(self, *, out_file: str, title: Optional[str]):
         self.title = title
         self.out_file = out_file
@@ -58,7 +58,7 @@ class FileConsole(BoxedConsoleAPI):
             fou.write("\n")
 
 
-class BoxedConsole(BoxedConsoleAPI):
+class BoxedConsole(BoxedConsoleBase):
     def __init__(self, *, box_width, box_title, box_bg_color="black"):
         self.console = Console()
         self.box_width = box_width
@@ -86,7 +86,7 @@ class BoxedConsole(BoxedConsoleAPI):
 
 def get_boxed_console(
     box_title=None, box_bg_color="black", console_name="cofa", debug_mode=False
-) -> BoxedConsoleAPI:
+) -> BoxedConsoleBase:
     if debug_mode:
         if BoxedConsoleConfigs.out_dir:
             return FileConsole(
@@ -104,4 +104,4 @@ def get_boxed_console(
                 box_bg_color=box_bg_color,
             )
     else:
-        return MockBoxedConsole()
+        return MockConsole()
