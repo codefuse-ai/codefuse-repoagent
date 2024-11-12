@@ -1,4 +1,3 @@
-import fnmatch
 import glob
 import os
 import random
@@ -12,7 +11,7 @@ import rapidfuzz
 from cofa.base.paths import SnippetPath, FilePath
 from cofa.config import CofaConfig
 from cofa.splits.factory import SplFactory
-from cofa.utils import sanitize_content, CannotReachHereError
+from cofa.utils import sanitize_content, CannotReachHereError, match_any_pattern
 
 RepoTup = namedtuple("RepoTup", ("org", "name", "path"))
 
@@ -23,30 +22,23 @@ class RepoBase:
         repo: RepoTup,
         *,
         # This should be shell patterns as in the fnmatch module
-        excluded_patterns: Optional[List[str]] = None,
+        excludes: Optional[List[str]] = None,
     ):
         self.repo_org = repo.org
         self.repo_name = repo.name
         self.repo_path = str(FilePath(repo.path).resolve())
-        self.excluded_patterns = excluded_patterns or []
+        self.excludes = excludes or []
         self._snippets: List[SnippetPath] = []
 
     @property
     def full_name(self) -> str:
         return f"{self.repo_org}/{self.repo_name}"
 
-    def render_file_tree(
-        self, included_file_patterns: Optional[List[str]] = None
-    ) -> str:
+    def render_file_tree(self, includes: Optional[List[str]] = None) -> str:
         from cofa.base.ftree import FileTree
 
-        def should_include(fp: str):
-            if included_file_patterns:
-                return any(
-                    fnmatch.fnmatch(fp, pattern) for pattern in included_file_patterns
-                )
-            else:
-                return True
+        def should_include_file(fp: str):
+            return (includes and match_any_pattern(fp, includes)) or True
 
         def format_file_tree(curr_dir: FilePath, depth: int):
             dir_tree_str = ""
@@ -59,7 +51,7 @@ class RepoBase:
                 relative_path = str(child_file)[len(self.repo_path) + 1 :]
                 if self.should_exclude(relative_path):
                     continue
-                if child_file.is_file() and not should_include(relative_path):
+                if child_file.is_file() and not should_include_file(relative_path):
                     continue
                 indentation = " " * FileTree.LINE_INDENT_NUM_SPACES * depth
                 if child_file.is_dir():
@@ -210,30 +202,30 @@ class RepoBase:
         self,
         file_path: str,
         limit: int = 10,
-        return_abs_paths: bool = False,
-        included_patterns: Optional[List[str]] = None,
+        absolute: bool = False,
+        includes: Optional[List[str]] = None,
     ) -> List[str]:
         return self._find_similar_paths(
             file_path,
             self.get_all_files(),
             limit=limit,
-            return_abs_paths=return_abs_paths,
-            included_patterns=included_patterns,
+            absolute=absolute,
+            includes=includes,
         )
 
     def find_similar_directories(
         self,
         directory_path: str,
         limit: int = 10,
-        return_abs_paths: bool = False,
-        included_patterns: List[str] = None,
+        absolute: bool = False,
+        includes: List[str] = None,
     ) -> List[str]:
         return self._find_similar_paths(
             directory_path,
             self.get_all_directories(),
             limit=limit,
-            return_abs_paths=return_abs_paths,
-            included_patterns=included_patterns,
+            absolute=absolute,
+            includes=includes,
         )
 
     def get_rand_file(self) -> str:
@@ -246,46 +238,46 @@ class RepoBase:
 
     @abstractmethod
     def search_snippets(
-        self, query: str, engine: str = None, limit: int = 10, *args, **kwargs
+        self,
+        query: str,
+        limit: Optional[int] = 10,
+        includes: Optional[List[str]] = None,
+        *args,
+        **kwargs,
     ) -> List[str]: ...
 
-    def search_files(self, query, engine: str = None, limit: int = 10, *args, **kwargs):
-        # Let's assume the top 32*limit snippets must contain top limit files
-        files = []
-        for s in self.search_snippets(
-            query, engine=engine, limit=32 * limit, *args, **kwargs
-        ):
-            if len(files) == limit:
-                return files
-            f = str(SnippetPath.from_str(s).file_path)
-            if f not in files:
-                files.append(f)
-        return files
+    @abstractmethod
+    def search_files(
+        self,
+        query,
+        limit: Optional[int] = 10,
+        includes: Optional[List[str]] = None,
+        *args,
+        **kwargs,
+    ) -> List[str]: ...
 
     def should_exclude(self, file_path: str):
-        return any(
-            fnmatch.fnmatch(file_path, pattern) for pattern in self.excluded_patterns
-        ) or CofaConfig.should_exclude(os.path.join(self.repo_path, file_path))
+        return match_any_pattern(file_path, self.excludes) or CofaConfig.should_exclude(
+            os.path.join(self.repo_path, file_path)
+        )
 
     def _find_similar_paths(
         self,
         to_path: str,
         from_path_list: List[str],
         limit: int = 10,
-        return_abs_paths: bool = False,
-        included_patterns: Optional[List[str]] = None,
+        absolute: bool = False,
+        includes: Optional[List[str]] = None,
     ) -> List[str]:
         path_name = FilePath(to_path).name
-        if included_patterns:
+        if includes:
             from_path_list = [
-                path
-                for path in from_path_list
-                if any(fnmatch.fnmatch(path, pattern) for pattern in included_patterns)
+                path for path in from_path_list if match_any_pattern(path, includes)
             ]
         similar_paths = RepoBase._find_similar_names(
             path_name, from_path_list, limit=limit
         )
-        if return_abs_paths:
+        if absolute:
             return [os.path.join(self.repo_path, path) for path in similar_paths]
         else:
             return similar_paths

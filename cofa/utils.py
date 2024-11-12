@@ -1,3 +1,4 @@
+import fnmatch
 import pickle
 import random
 import re
@@ -136,3 +137,15 @@ def sanitize_content(content):
     content = _PATTERN_PHONE_NUMBER.sub("<anonymous_phone_number>", content)
     content = _PATTERN_PASSWORD.sub("<password_mask>", content)
     return content
+
+
+def match_all_patterns(s: str, patterns: List[str]):
+    return all(fnmatch.fnmatch(s, p) for p in patterns)
+
+
+def match_any_pattern(s: str, patterns: List[str]):
+    return any(fnmatch.fnmatch(s, p) for p in patterns)
+
+
+def match_no_patterns(s: str, patterns: List[str]):
+    return all(not fnmatch.fnmatch(s, p) for p in patterns)

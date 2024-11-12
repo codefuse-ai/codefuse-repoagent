@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from cofa import utils
 from cofa.base.paths import FilePath, SnippetPath
@@ -12,7 +12,7 @@ class KwEng:
         self._repo = repo
         self._index = index
 
-    def search_snippets(self, query, limit: int = 7) -> List[str]:
+    def search_snippets(self, query: str, limit: Optional[int] = None) -> List[str]:
         snippet_scores = self._index.bm25_all(query)
         # Update snippet scores according to file scores
         snippet_list = self._repo.get_all_snippets()
