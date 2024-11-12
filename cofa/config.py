@@ -153,7 +153,6 @@ class _CofaFileConfigMixin:
             return True
         is_binary = False
         with file_path.open("rb") as fin:
-            # noinspection PyTypeChecker
             for block in iter(lambda: fin.read(1024), b""):
                 if b"\0" in block:
                     is_binary = True

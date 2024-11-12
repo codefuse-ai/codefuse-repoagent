@@ -2,7 +2,7 @@ import fnmatch
 from typing import List
 
 from cofa.base.repos import RepoBase
-from cofa.utils import TreeNode
+from cofa.utils.tree import TreeNode
 
 """
 This script is adapted from Sweep's tree_utils.py

@@ -1,17 +1,16 @@
 import glob
 import os
 import random
-from abc import abstractmethod
 from collections import namedtuple
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-import rapidfuzz
-
 from cofa.base.paths import SnippetPath, FilePath
 from cofa.config import CofaConfig
 from cofa.splits.factory import SplFactory
-from cofa.utils import sanitize_content, CannotReachHereError, match_any_pattern
+from cofa.utils.misc import CannotReachHereError
+from cofa.utils.pattern import match_any_pattern
+from cofa.utils.sanitize import sanitize_content
 
 RepoTup = namedtuple("RepoTup", ("org", "name", "path"))
 
@@ -93,11 +92,11 @@ class RepoBase:
         return dir_path in self.get_all_directories(incl_repo_dir=True)
 
     def get_all_snippets(self) -> List[str]:
-        self._ensure_repository_chunked()
+        self.ensure_repository_chunked()
         return [str(s) for s in self._snippets]
 
     def get_all_snippet_tuples(self) -> List[Tuple[str, int, int]]:
-        self._ensure_repository_chunked()
+        self.ensure_repository_chunked()
         return [(str(s.file_path), s.start_line, s.end_line) for s in self._snippets]
 
     def get_all_snippets_of_file(self, file_path: str) -> List[str]:
@@ -113,7 +112,7 @@ class RepoBase:
     def get_all_snippets_of_file_with_size(
         self, file_path: str, snippet_size: int = -1
     ) -> List[str]:
-        self._ensure_repository_chunked()
+        self.ensure_repository_chunked()
         if snippet_size <= 0:
             return self.get_all_snippets_of_file(file_path)
         # Merge consecutive snippets unless their size is snippet_size
@@ -198,36 +197,6 @@ class RepoBase:
 
         return snippet
 
-    def find_similar_files(
-        self,
-        file_path: str,
-        limit: int = 10,
-        absolute: bool = False,
-        includes: Optional[List[str]] = None,
-    ) -> List[str]:
-        return self._find_similar_paths(
-            file_path,
-            self.get_all_files(),
-            limit=limit,
-            absolute=absolute,
-            includes=includes,
-        )
-
-    def find_similar_directories(
-        self,
-        directory_path: str,
-        limit: int = 10,
-        absolute: bool = False,
-        includes: List[str] = None,
-    ) -> List[str]:
-        return self._find_similar_paths(
-            directory_path,
-            self.get_all_directories(),
-            limit=limit,
-            absolute=absolute,
-            includes=includes,
-        )
-
     def get_rand_file(self) -> str:
         dir_list = self.get_all_files()
         return dir_list[random.randint(0, len(dir_list) - 1)]
@@ -236,69 +205,12 @@ class RepoBase:
         dir_list = self.get_all_directories()
         return dir_list[random.randint(0, len(dir_list) - 1)]
 
-    @abstractmethod
-    def search_snippets(
-        self,
-        query: str,
-        limit: Optional[int] = 10,
-        includes: Optional[List[str]] = None,
-        *args,
-        **kwargs,
-    ) -> List[str]: ...
-
-    @abstractmethod
-    def search_files(
-        self,
-        query,
-        limit: Optional[int] = 10,
-        includes: Optional[List[str]] = None,
-        *args,
-        **kwargs,
-    ) -> List[str]: ...
-
     def should_exclude(self, file_path: str):
         return match_any_pattern(file_path, self.excludes) or CofaConfig.should_exclude(
             os.path.join(self.repo_path, file_path)
         )
 
-    def _find_similar_paths(
-        self,
-        to_path: str,
-        from_path_list: List[str],
-        limit: int = 10,
-        absolute: bool = False,
-        includes: Optional[List[str]] = None,
-    ) -> List[str]:
-        path_name = FilePath(to_path).name
-        if includes:
-            from_path_list = [
-                path for path in from_path_list if match_any_pattern(path, includes)
-            ]
-        similar_paths = RepoBase._find_similar_names(
-            path_name, from_path_list, limit=limit
-        )
-        if absolute:
-            return [os.path.join(self.repo_path, path) for path in similar_paths]
-        else:
-            return similar_paths
-
-    @staticmethod
-    def _find_similar_names(name: str, name_list: List[str], limit: int = 10):
-        sorted_full_scores = sorted(
-            name_list,
-            key=lambda n: rapidfuzz.fuzz.ratio(name, n) + (101 if name in n else 0),
-            reverse=True,
-        )
-        sorted_part_scores = sorted(
-            name_list, key=lambda n: rapidfuzz.fuzz.partial_ratio(name, n), reverse=True
-        )
-        sorted_final_scores = sorted_full_scores[:limit]
-        for s in sorted_part_scores[:limit]:
-            if s not in sorted_final_scores:
-                sorted_final_scores.append(s)
-        return sorted_final_scores
-
-    def _ensure_repository_chunked(self):
+    def ensure_repository_chunked(self):
         if self._snippets:
             return
         self._snippets = []

@@ -1,10 +1,10 @@
 from typing import List, Optional
 
-from cofa import utils
 from cofa.base.paths import FilePath, SnippetPath
 from cofa.base.repos import RepoBase
 from cofa.kwe.index import InvertedIndex
 from cofa.kwe.tokens import TokenizerBase
+from cofa.utils import misc as utils
 
 
 class KwEng:
