@@ -1,5 +1,5 @@
 import fnmatch
-from typing import List
+from typing import List, Optional
 
 from cofa.base.repos import RepoBase
 from cofa.utils.tree import TreeNode
@@ -43,9 +43,9 @@ class FileTree:
     DIRECTORY_LINE_ENDINGS = "/"
 
     @staticmethod
-    def from_repository(repository: RepoBase):
+    def from_repository(repository: RepoBase, includes: Optional[List[str]] = None):
         file_tree = FileTree()
-        file_tree._parse_tree(repository.render_file_tree())
+        file_tree._parse_tree(repository.render_file_tree(includes=includes))
         return file_tree
 
     def __init__(self):
