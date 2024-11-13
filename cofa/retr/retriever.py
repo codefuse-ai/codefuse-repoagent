@@ -173,19 +173,38 @@ class Retriever(EventEmitter):
 
         return dep_files
 
-    def score_file_preview(
-        self, query: str, file_list: List[str]
+    def score_files_by_preview(
+        self, query: str, file_list: List[str], num_proc: int = 1
     ) -> Dict[int, List[str]]:
         self.console.printb("FPS: Scoring each file by its preview ...")
+        num_proc = 1 if num_proc <= 1 else num_proc
+
+        results = parallel(
+            [
+                (self.score_file_by_preview, (query, file, file_list, num_proc > 1))
+                for file in file_list
+            ],
+            n_jobs=num_proc,
+            backend="threading",
+        )
+
         score_dict = defaultdict(list)
-        for file in file_list:
-            scorer = PreviewScorer(
-                query=query, repo=self.repo, llm=LLMFactory.create(self.use_llm)
-            )
-            score, reason = scorer.score(file, file_list)
-            self.console.printb(f"File {file} is scored {score}: {reason}")
-            score_dict[score].append((file, reason))
+        for file, res in zip(file_list, results):
+            score_dict[res[0]].append((file, res[1]))
+
         return score_dict
+
+    def score_file_by_preview(
+        self, query: str, file: str, file_list: List[str], disable_debugging=False
+    ):
+        scorer = PreviewScorer(
+            query=query, repo=self.repo, llm=LLMFactory.create(self.use_llm)
+        )
+        if disable_debugging:
+            scorer.disable_debugging()
+        score, reason = scorer.score(file, file_list)
+        self.console.printb(f"File {file} is scored {score}: {reason}")
+        return score, reason
 
     def retrieve(self, query, files_only: bool = False, num_proc: int = 1) -> List[str]:
         # Rewrite the query; this may involving summarization, etc.
@@ -245,7 +264,9 @@ class Retriever(EventEmitter):
         )
 
         # Score each plausible by their preview and retain those exceeding a threshold
-        file_score = self.score_file_preview(query_r, file_list=interm_res)
+        file_score = self.score_files_by_preview(
+            query_r, file_list=interm_res, num_proc=num_proc
+        )
         plausible_files = []
         for sc in sorted(file_score.keys(), reverse=True):
             if sc >= CofaConfig.FPS_PREVIEW_SCORE_THRESHOLD:
