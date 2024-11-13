@@ -6,35 +6,39 @@ from dotenv import load_dotenv
 
 
 class _CofaRetrieverConfigMixin:
-    # User Query Search
-    UQS_FILE_LIMIT = 10
+    # Query Summarization
+    QSM_WORD_SIZE = 40
+    QSM_STRATEGY_NAME_NO_QSM = "disable-qsm"
+    QSM_STRATEGY = QSM_STRATEGY_NAME_NO_QSM
+
+    # Entity Definition Lookup
+    EDL_FILE_LIMIT = 10
 
     # Keyword Engine Search
     KWS_FILE_LIMIT = 5
 
-    # File Tree Search
-    FTS_STRATEGY_NAME_NO_FTS = "disable-fts"
-    FTS_STRATEGY_NAME_FTD_GU = "files-then-dirs__give-up"
-    FTS_STRATEGY_NAME_FTD_TS = "files-then-dirs__try-shrinking"
-    FTS_STRATEGY_NAME_DTF_GU = "dirs-then-files__give-up"
-    FTS_STRATEGY = FTS_STRATEGY_NAME_FTD_GU
-    FTS_FTD_GOING_UPWARD = 2
-    FTS_DTF_DIR_LIMIT = 5
-    FTS_FILE_LIMIT = 1
-    FTS_MAX_FILE_TREE_SIZE = 1500
+    # File Tree Exploration
+    FTE_STRATEGY_NAME_NO_FTE = "disable-fte"
+    FTE_STRATEGY_NAME_FTD_GU = "files-then-dirs__give-up"
+    FTE_STRATEGY_NAME_FTD_TS = "files-then-dirs__try-shrinking"
+    FTE_STRATEGY = FTE_STRATEGY_NAME_FTD_GU
+    FTE_FTD_GOING_UPWARD = 2
+    FTE_FILE_LIMIT = 2
+    FTE_MAX_FILE_TREE_SIZE = 1500
 
-    # File Snippet Finding
-    FSF_SNIPPET_FINDER_NAME_ENUM_FNDR = "enumerative-finder"
-    FSF_SNIPPET_FINDER_NAME_LINE_CHOOSER = "line_chooser"
-    FSF_SNIPPET_FINDER_NAME_QA_FINDER = "qa-function-finder"
-    FSF_SNIPPET_FINDER = FSF_SNIPPET_FINDER_NAME_ENUM_FNDR
-    # FSF_SNIPPET_FINDER = FSF_SNIPPET_FINDER_NAME_QA_FINDER
-    FSF_ENUM_OR_RANK_FNDR_SNIPPET_SIZE = 100
-    FSF_ENUM_OR_RANK_FNDR_NUM_THREADS = 1
-    FSF_RANK_FNDR_GROUP_SIZE = 5
-    FSF_SNIPPET_DETER_NAME_SNIP_SCORER = "snippet-scorer"
-    FSF_SNIPPET_DETER = FSF_SNIPPET_DETER_NAME_SNIP_SCORER
-    FSF_SNIP_SCORER_THRESHOLD = 1
+    # File Preview Scoring
+    FPS_PREVIEW_SCORE_THRESHOLD = 2
+
+    # Snippet Context Retrieval
+    SCR_SNIPPET_FINDER_NAME_ENUM_FNDR = "enumerative-finder"
+    SCR_SNIPPET_FINDER_NAME_PREV_FNDR = "preview-finder"
+    SCR_SNIPPET_FINDER = SCR_SNIPPET_FINDER_NAME_ENUM_FNDR
+    SCR_ENUM_FNDR_SNIPPET_SIZE = 100
+    SCR_ENUM_FNDR_NUM_THREADS = 1
+    SCR_SNIPPET_DETERM_NAME_SNIP_SCORER = "snippet-scorer"
+    SCR_SNIPPET_DETERM_NAME_SNIP_JUDGE = "snippet-judge"
+    SCR_SNIPPET_DETERM = SCR_SNIPPET_DETERM_NAME_SNIP_SCORER
+    SCR_SNIP_SCORER_THRESHOLD = 1
 
     # Overall Results
     FINAL_FILE_LIMIT = 5

@@ -100,9 +100,11 @@ class RepoBase:
         return [(str(s.file_path), s.start_line, s.end_line) for s in self._snippets]
 
     def get_all_snippets_of_file(self, file_path: str) -> List[str]:
+        self.ensure_repository_chunked()
         return [str(s) for s in self._snippets if str(s.file_path) == file_path]
 
     def get_all_snippet_tuples_of_file(self, file_path: str) -> List[Tuple[int, int]]:
+        self.ensure_repository_chunked()
         return [
             (s.start_line, s.end_line)
             for s in self._snippets

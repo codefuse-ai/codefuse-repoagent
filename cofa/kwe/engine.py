@@ -30,7 +30,7 @@ class KwEng:
         index = InvertedIndex(tokenizer)
         for file in repo.get_all_files():
             file_path = FilePath(repo.repo_path) / file
-            file_cont = file_path.read_text()
+            file_cont = file_path.read_text(encoding="utf-8", errors="replace")
             file_lines = file_cont.splitlines()
             for snippet in repo.get_all_snippets_of_file(file):
                 snp_path = SnippetPath.from_str(snippet)
