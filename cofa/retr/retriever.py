@@ -177,11 +177,11 @@ class Retriever(EventEmitter):
         self, query: str, file_list: List[str]
     ) -> Dict[int, List[str]]:
         self.console.printb("FPS: Scoring each file by its preview ...")
-        scorer = PreviewScorer(
-            query=query, repo=self.repo, llm=LLMFactory.create(self.use_llm)
-        )
         score_dict = defaultdict(list)
         for file in file_list:
+            scorer = PreviewScorer(
+                query=query, repo=self.repo, llm=LLMFactory.create(self.use_llm)
+            )
             score, reason = scorer.score(file, file_list)
             self.console.printb(f"File {file} is scored {score}: {reason}")
             score_dict[score].append((file, reason))
