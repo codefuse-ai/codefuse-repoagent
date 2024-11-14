@@ -44,14 +44,14 @@ def parse_query(args: any) -> Tuple[str, List[str]]:
 
 def parse_llms(args: any) -> LLMConfig:
     try:
-        s, n = args.model.split(":", maxsplit=1)
+        p, m = args.model.split(":", maxsplit=1)
     except ValueError:
         raise ArgumentError(
-            'Invalid argument for "--model". It should be in the format of "service:name" such as "openai:gpt-4o", "ollama:qwen2:0.5b-instruct".'
+            'Invalid argument for "--model". It should be in the format of "provider:model" such as "openai:gpt-4o", "ollama:qwen2:0.5b-instruct".'
         )
     return LLMConfig(
-        service=s,
-        llm_name=n,
+        provider=p,
+        llm_name=m,
         debug_mode=args.verbose,
         temperature=args.model_temperature,
         top_k=args.model_top_k,
@@ -96,7 +96,7 @@ def make_common_options(parser: ArgumentParser):
         "-m",
         required=True,
         type=str,
-        help='The assistive LM in the format of "service:name" such as "openai:gpt-4o", "ollama:qwen2:0.5b-instruct"',
+        help='The assistive LM in the format of "provider:model" such as "openai:gpt-4o", "ollama:qwen2:0.5b-instruct"',
     )
     parser.add_argument(
         "--model-temperature",

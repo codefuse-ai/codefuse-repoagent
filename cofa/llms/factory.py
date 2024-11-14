@@ -2,13 +2,14 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 from cofa.llms.base import LLMBase
+from cofa.llms.huggingface_ import HuggingFace
 from cofa.llms.ollama_ import Ollama
 from cofa.llms.openai_ import OpenAI
 
 
 @dataclass
 class LLMConfig:
-    service: Literal["openai", "ollama"]
+    provider: Literal["openai", "ollama", "huggingface"]
     llm_name: str
     debug_mode: bool = field(default=False)
     temperature: float = field(default=0)
@@ -23,7 +24,8 @@ class LLMFactory:
         return {
             "ollama": Ollama,
             "openai": OpenAI,
-        }[config.service](
+            "huggingface": HuggingFace,
+        }[config.provider](
             config.llm_name,
             debug_mode=config.debug_mode,
             temperature=config.temperature,
@@ -35,7 +37,7 @@ class LLMFactory:
 
 if __name__ == "__main__":
     llm = LLMFactory.create(
-        LLMConfig(service="ollama", llm_name="qwen2:0.5b-instruct", debug_mode=True)
+        LLMConfig(provider="ollama", llm_name="qwen2:0.5b-instruct", debug_mode=True)
     )
     llm.append_user_message("Hi, I'm Simon!")
     llm.query()
