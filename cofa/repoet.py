@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 from typing import List, Optional
 
-import cofa.retr.retriever as cfar
+import cofa.retrv.retriever as cfar
 from cofa import options
 from cofa.agents.rewrite.base import RewriterBase
 from cofa.agents.rewrite.dont import DontRewrite
