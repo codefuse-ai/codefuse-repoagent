@@ -190,7 +190,7 @@ class AgentBase:
     @staticmethod
     def parse_json_response(
         r, drop_newline_symbol=True
-    ) -> Optional[dict].Optional[str]:
+    ) -> (Optional[dict], Optional[str]):
         try:
             if "{" not in r:
                 raise Exception("Missing the left, matching curly brace ({)")
