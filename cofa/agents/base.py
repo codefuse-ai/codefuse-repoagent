@@ -1,4 +1,3 @@
-from abc import abstractmethod, ABC
 from typing import Optional, Tuple, List
 
 import pyjson5 as json5
@@ -49,7 +48,12 @@ Please fix the above shown issues (shown above) and respond again.
 """
 
 
-class AgentBase(ABC):
+class ReachChatRoundLimitException(Exception):
+    def __init__(self, limit: int):
+        super().__init__(f"The maximum allowed chat-round limit is {limit}")
+
+
+class AgentBase:
     def __init__(self, llm: LLMBase, json_schema: Optional[str], *, max_chat_round=10):
         self.llm = llm
         self.json_schema = json_schema
@@ -82,9 +86,12 @@ class AgentBase(ABC):
 
         for _ in range(self.max_chat_round):
             try:
-                return self.llm.query()
+                response = self.llm.query()
             except Exception:
-                pass
+                continue
+
+            # Parse the response and return results
+            return self._parse_response(response, *args, **kwargs)
 
         return self._default_result_when_reaching_max_chat_round()
 
@@ -144,7 +151,6 @@ class AgentBase(ABC):
 
         return self._default_result_when_reaching_max_chat_round()
 
-    @abstractmethod
     def _check_response_format(
         self, response: dict, *args, **kwargs
     ) -> Tuple[bool, Optional[str]]:
@@ -153,9 +159,8 @@ class AgentBase(ABC):
         Return (True, None) if the response follows.
         Otherwise, (False, error_message) if there are violations.
         """
-        ...
+        return True, None
 
-    @abstractmethod
     def _check_response_semantics(
         self, response: dict, *args, **kwargs
     ) -> Tuple[bool, Optional[str]]:
@@ -164,17 +169,15 @@ class AgentBase(ABC):
         Return (True, None) if the response is valid.
         Otherwise, (False, error_prompt).
         """
-        ...
+        return True, None
 
-    @abstractmethod
-    def _parse_response(self, response: dict, *args, **kwargs) -> any:
+    def _parse_response(self, response: any, *args, **kwargs) -> any:
         """
         Parse the response and return results.
         The results should be of the same type as run().
         """
-        ...
+        return response
 
-    @abstractmethod
     def _default_result_when_reaching_max_chat_round(self):
         """
         The default result to return when the model have reached a max chat round.
@@ -182,7 +185,7 @@ class AgentBase(ABC):
         So be sure to return a value that can indicate an "exit" of running the model.
         The return value should be of the same type as run().
         """
-        ...
+        raise ReachChatRoundLimitException(self.max_chat_round)
 
     @staticmethod
     def parse_json_response(

@@ -38,9 +38,3 @@ class SimpleAgent(AgentBase):
 
     def _parse_response(self, response: dict, *args, **kwargs):
         return {r[0]: response[r[0]] for r in self.returns}
-
-    def _default_result_when_reaching_max_chat_round(self):
-        return (
-            None,
-            "The model have reached the max number of chat round and is unable to find any further files.",
-        )
