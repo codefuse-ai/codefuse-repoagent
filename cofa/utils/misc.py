@@ -2,6 +2,7 @@ import pickle
 import random
 import time
 import traceback
+from collections import OrderedDict
 
 import joblib
 
@@ -49,3 +50,7 @@ def load_object(path):
     joblib.load(path)
     with open(path, "rb") as fin:
         return pickle.load(fin)
+
+
+def ordered_set(array: list) -> set:
+    return OrderedDict.fromkeys([x for x in array])
