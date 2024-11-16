@@ -2,8 +2,6 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Literal, Optional, List
 
-import pyjson5 as json5
-
 from cofa.base.console import get_boxed_console
 
 
@@ -113,29 +111,6 @@ class LLMBase:
             formatted_message, title=message.role.capitalize(), background=color
         )
         self.history.append(message)
-
-    @staticmethod
-    def parse_json_response(r, drop_newline_symbol=True):
-        try:
-            if "{" not in r:
-                raise Exception("Missing the left, matching curly brace ({)")
-            if "}" not in r:
-                raise Exception("Missing the right, matching curly brace (})")
-            r = r[
-                r.find("{") : r.rfind("}") + 1
-            ]  # Skip all preceding and succeeding contents
-            # Since we are a JSON object, "\n" takes no effects unless it is within some key's value. However,
-            # it can make our JSON parsing fail once it is within a value. For example:
-            #     `{\n"a": "value of a", "b": "value of \n b"}`
-            # The first "\n" preceding "\"a\"" is valid, but the second "\n" preceding " b" makes the JSON invalid.
-            # Indeed, the second one should be "\\n". Since we do not have an approach to distinguish them,
-            # we conservatively assume that "\n" do not make a major contribution for the result and discard them.
-            if drop_newline_symbol:
-                r = r.replace("\n", "  ")
-            # We used JSON5 as LLM may generate some JS-style jsons like comments
-            return json5.loads(r), None
-        except Exception as e:
-            return None, getattr(e, "message", str(e))
 
     @abstractmethod
     def do_query(self) -> str:

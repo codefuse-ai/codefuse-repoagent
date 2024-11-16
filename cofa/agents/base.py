@@ -1,6 +1,8 @@
 from abc import abstractmethod, ABC
 from typing import Optional, Tuple, List
 
+import pyjson5 as json5
+
 from cofa.llms.base import LLMBase, ChatMessage
 
 SYSTEM_PROMPT_JSON_INSTRUCTION = """\
@@ -48,7 +50,7 @@ Please fix the above shown issues (shown above) and respond again.
 
 
 class AgentBase(ABC):
-    def __init__(self, llm: LLMBase, json_schema: str, *, max_chat_round=10):
+    def __init__(self, llm: LLMBase, json_schema: Optional[str], *, max_chat_round=10):
         self.llm = llm
         self.json_schema = json_schema
         self.max_chat_round = max_chat_round
@@ -66,6 +68,29 @@ class AgentBase(ABC):
         return self.llm.get_history()
 
     def run(self, system_prompt: str, *args, **kwargs):
+        if self.json_schema:
+            return self._run_with_json_schema(system_prompt, *args, **kwargs)
+        else:
+            return self._run_without_json_schema(system_prompt, *args, **kwargs)
+
+    def _run_without_json_schema(self, system_prompt: str, *args, **kwargs):
+        # We're a clean run, so clear all prior chats
+        self.llm.clear_history()
+
+        # TODO: Use append_system_message()?
+        self.llm.append_user_message(system_prompt)
+
+        for _ in range(self.max_chat_round):
+            try:
+                return self.llm.query()
+            except Exception:
+                pass
+
+        return self._default_result_when_reaching_max_chat_round()
+
+    def _run_with_json_schema(self, system_prompt: str, *args, **kwargs):
+        assert self.json_schema, "No JSON schema is given"
+
         # We're a clean run, so clear all prior chats
         self.llm.clear_history()
 
@@ -76,7 +101,12 @@ class AgentBase(ABC):
         )
 
         for _ in range(self.max_chat_round):
-            response, err_msg = self.llm.parse_json_response(self.llm.query())
+            try:
+                response = self.llm.query()
+            except Exception:
+                continue
+
+            response, err_msg = self.parse_json_response(response)
 
             # TODO We need to cleanup all trial-error messages and keep our history clean
 
@@ -153,3 +183,28 @@ class AgentBase(ABC):
         The return value should be of the same type as run().
         """
         ...
+
+    @staticmethod
+    def parse_json_response(
+        r, drop_newline_symbol=True
+    ) -> Optional[dict].Optional[str]:
+        try:
+            if "{" not in r:
+                raise Exception("Missing the left, matching curly brace ({)")
+            if "}" not in r:
+                raise Exception("Missing the right, matching curly brace (})")
+            r = r[
+                r.find("{") : r.rfind("}") + 1
+            ]  # Skip all preceding and succeeding contents
+            # Since we are a JSON object, "\n" takes no effects unless it is within some key's value. However,
+            # it can make our JSON parsing fail once it is within a value. For example:
+            #     `{\n"a": "value of a", "b": "value of \n b"}`
+            # The first "\n" preceding "\"a\"" is valid, but the second "\n" preceding " b" makes the JSON invalid.
+            # Indeed, the second one should be "\\n". Since we do not have an approach to distinguish them,
+            # we conservatively assume that "\n" do not make a major contribution for the result and discard them.
+            if drop_newline_symbol:
+                r = r.replace("\n", "  ")
+            # We used JSON5 as LLM may generate some JS-style jsons like comments
+            return json5.loads(r), None
+        except Exception as e:
+            return None, getattr(e, "message", str(e))
