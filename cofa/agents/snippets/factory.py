@@ -36,14 +36,9 @@ class _SFW:
         for snippet in snippets:
             snippet_path = SnippetPath.from_str(snippet)
             snippet_tuples.append((snippet_path.start_line, snippet_path.end_line))
-        snippet_tuples = merge_overlapping_intervals(snippet_tuples)
-        # For merge_overlapping_intervals: [30, 50) and [50, 60) won't be merged as they do not overlap
-        merged_tuples = []
-        for i in range(len(snippet_tuples)):
-            if len(merged_tuples) > 0 and merged_tuples[-1][1] == snippet_tuples[i][0]:
-                merged_tuples[-1] = (merged_tuples[-1][0], snippet_tuples[i][1])
-            else:
-                merged_tuples.append(snippet_tuples[i])
+        merged_tuples = merge_overlapping_intervals(
+            snippet_tuples, merge_continuous=True
+        )
         return [str(SnippetPath(FilePath(file_path), a, b)) for a, b in merged_tuples]
 
     def _printb(self, *args, **kwargs):
