@@ -1,4 +1,4 @@
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 
 from cofa.agents.base import AgentBase
 from cofa.base.ftree import FileTree
@@ -81,6 +81,7 @@ class FileFinder(AgentBase):
         repo: Repository,
         tree: FileTree,
         llm: LLMBase,
+        includes: Optional[List[str]] = None,
         *args,
         **kwargs,
     ):
@@ -94,6 +95,7 @@ class FileFinder(AgentBase):
         self.repo = repo
         self.file_list = []
         self.tree = tree
+        self.includes = includes
 
     def next_file(self):
         return self.run(
@@ -129,7 +131,12 @@ class FileFinder(AgentBase):
             return False, FILE_NOT_EXISTS_MESSAGE.format(
                 file_path=file_path,
                 similar_file_paths="\n".join(
-                    [f"- {path}" for path in self.repo.find_similar_files(file_path)]
+                    [
+                        f"- {path}"
+                        for path in self.repo.find_similar_files(
+                            file_path, includes=self.includes
+                        )
+                    ]
                 ),
             )
 

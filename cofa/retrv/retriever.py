@@ -56,7 +56,9 @@ class Retriever(EventEmitter):
         # Get similar files from the repository according to the file names that the LLM gave
         similar_files = []
         for fn in file_names:
-            similar = self.repo.find_similar_files(fn, limit=limit)
+            similar = self.repo.find_similar_files(
+                fn, limit=limit, includes=self.incl_pats
+            )
             similar_files.extend(similar)
         self.console.printb(
             f"Found {len(similar_files)} similar files according to the file names given"
@@ -152,7 +154,11 @@ class Retriever(EventEmitter):
                 )
 
         file_finder = FileFinder(
-            query, self.repo, tree=file_tree, llm=LLMFactory.create(self.use_llm)
+            query,
+            self.repo,
+            tree=file_tree,
+            llm=LLMFactory.create(self.use_llm),
+            includes=self.incl_pats,
         )
         # Notify file finder that these files are already found
         file_finder.file_list.extend(starting_files)

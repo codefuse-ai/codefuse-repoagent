@@ -37,7 +37,7 @@ class RepoBase:
         from cofa.base.ftree import FileTree
 
         def should_include_file(fp: str):
-            return (includes and match_any_pattern(fp, includes)) or True
+            return not includes or match_any_pattern(fp, includes)
 
         def format_file_tree(curr_dir: FilePath, depth: int):
             dir_tree_str = ""
