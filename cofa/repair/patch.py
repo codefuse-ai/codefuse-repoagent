@@ -105,23 +105,28 @@ class PatchGen(AgentBase):
     def _parse_response(self, response, *args, **kwargs) -> Optional[str]:
         file_paths = kwargs["file_paths"]
         edit_cmds = re.findall(_PATTERN_EDIT_COMMAND, response, re.DOTALL)
-        patch = ""
+        patch = []
         for edit in edit_cmds:
+            self.console.printb(f"Found edit command: {edit}")
             edited_file, old_cont, new_cont = self._parse_edit(edit, file_paths)
             if not edited_file:
+                self.console.printb("The above edit command is invalid")
                 continue
-            udiff = str(
+            self.console.printb(f"The above edit command is for: {edited_file}")
+            udiff = "".join(
                 difflib.unified_diff(
-                    old_cont,
-                    new_cont,
+                    old_cont.splitlines(keepends=True),
+                    new_cont.splitlines(keepends=True),
                     fromfile=edited_file,
                     tofile=edited_file,
                 )
             )
             if not udiff:
                 continue
-            patch = patch + "\n" + udiff
-        return patch if patch else None
+            patch.append(udiff)
+        if not patch:
+            self.console.printb("No valid edit commands found in LLM's response")
+        return "\n".join(patch) if patch else None
 
     def _make_context(self, snip_paths: List[str], surroundings: int):
         ctx_dict = OrderedDict()
@@ -169,7 +174,9 @@ class PatchGen(AgentBase):
         # Parse search and replace content
         search_content = "\n".join(edit_lines[ser_lno + 1 : sep_lno])
         replace_content = "\n".join(edit_lines[sep_lno + 1 : rep_lno])
-        if not search_content or not replace_content:
+        if (
+            not search_content or not replace_content
+        ):  # TODO: Should we allow deletion, i.e., replace_content == ""?
             return None, "", ""
 
         # Get the old content of the edited file and compute its new content
