@@ -23,7 +23,7 @@ def retrieve(
     includes: Optional[List[str]] = None,
 ) -> List[str]:
     console = get_boxed_console(
-        box_title=cfar.DEBUG_OUTPUT_LOGGING_TITLE,
+        box_title="REPOET",
         box_bg_color=cfar.DEBUG_OUTPUT_LOGGING_COLOR,
         debug_mode=True,
     )
@@ -32,7 +32,7 @@ def retrieve(
         f"Loaded repository {repo.repo_org}/{repo.repo_name} from {repo.repo_path} ..."
     )
 
-    console.printb(f"""Retrieving relevant context for query:\n```\n{query}\n```""")
+    console.printb(f"Retrieving relevant context for query:\n```\n{query}\n```")
     retr = cfar.Retriever(
         repo,
         use_llm=use_llm,
@@ -41,11 +41,16 @@ def retrieve(
         rewriter=rewriter,
     )
 
-    return retr.retrieve(
+    snip_ctx = retr.retrieve(
         query,
         files_only=files_only,
         num_proc=num_proc,
     )
+    console.printb(
+        "The retrieved context is:\n" + ("\n".join(["- " + sp for sp in snip_ctx]))
+    )
+
+    return snip_ctx
 
 
 def parse_args():
