@@ -17,7 +17,7 @@ DEBUG_OUTPUT_LOGGING_TITLE = "Repairer"
 
 
 class PatchEval(Protocol):
-    def __call__(self, patch: str, repo: Repository, *args, **kwargs) -> bool: ...
+    def __call__(self, issue_id: str, repo: Repository, *args, **kwargs) -> bool: ...
 
 
 class IssueRepa:
@@ -51,7 +51,12 @@ class IssueRepa:
         return patches[0]
 
     def eval_patch(
-        self, issue: str, patch: str, eval_func: PatchEval, *args, **kwargs
+        self,
+        issue_id: str,
+        patch_str: str,
+        eval_func: PatchEval,
+        *args,
+        **kwargs,
     ) -> bool:
         tempdir = Path(tempfile.mkdtemp())
         patch_file = tempdir / "patch.diff"
@@ -64,9 +69,9 @@ class IssueRepa:
             excludes=self.repo.excludes,
         )
         self.console.printb(
-            f"Applying the following plausible patch to the repository {self.repo.repo_path}:\n```diff\n{patch}\n```"
+            f"Applying the following plausible patch to the repository {self.repo.repo_path}:\n```diff\n{patch_str}\n```"
         )
-        patch_file.write_text(patch, encoding="utf-8")
+        patch_file.write_text(patch_str, encoding="utf-8")
         shutil.copytree(
             self.repo.repo_path, patched_repo.repo_path, dirs_exist_ok=False
         )
@@ -75,7 +80,7 @@ class IssueRepa:
             f"The patched repository is placed at: {patched_repo.repo_path}"
         )
         self.console.printb("Evaluating if the patched repository could pass all tests")
-        passed = eval_func(issue=issue, repo=patched_repo, *args, **kwargs)
+        passed = eval_func(issue_id=issue_id, repo=patched_repo, *args, **kwargs)
         if not passed:
             self.console.printb("Failed! The plausible patch failed on some tests!")
         else:
@@ -84,17 +89,26 @@ class IssueRepa:
         return passed
 
     def gen_then_eval(
-        self, issue: str, snip_paths: List[str], eval_func: PatchEval, *args, **kwargs
+        self,
+        issue: str,
+        issue_id: str,
+        snip_paths: List[str],
+        eval_func: PatchEval,
+        *args,
+        **kwargs,
     ):
         patch = self.gen_patch(issue, snip_paths=snip_paths)
         if not patch:
             return None, False
-        passed = self.eval_patch(issue=issue, eval_func=eval_func, *args, **kwargs)
+        passed = self.eval_patch(
+            issue_id=issue_id, patch_str=patch, eval_func=eval_func, *args, **kwargs
+        )
         return patch, passed
 
     def try_repair(
         self,
         issue: str,
+        issue_id: str,
         snip_paths: List[str],
         eval_func: PatchEval,
         num_retries: int = 20,
@@ -105,7 +119,12 @@ class IssueRepa:
         refined_paths: List[str] = []
         for retry in range(num_retries):
             patch, passed = self.gen_then_eval(
-                issue, snip_paths=snip_paths, eval_func=eval_func, *args, **kwargs
+                issue,
+                issue_id=issue_id,
+                snip_paths=snip_paths,
+                eval_func=eval_func,
+                *args,
+                **kwargs,
             )
 
             # We have generated a patch that passed all tests
@@ -124,7 +143,12 @@ class IssueRepa:
                 issue=issue, snip_paths=snip_paths, num_proc=num_proc
             )
             patch, passed = self.gen_then_eval(
-                issue, snip_paths=refined_paths, eval_func=eval_func, *args, **kwargs
+                issue,
+                issue_id=issue_id,
+                snip_paths=refined_paths,
+                eval_func=eval_func,
+                *args,
+                **kwargs,
             )
 
             # We have generated a patch that passed all tests
