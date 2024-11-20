@@ -75,7 +75,7 @@ class IssueRepa:
         shutil.copytree(
             self.repo.repo_path, patched_repo.repo_path, dirs_exist_ok=False
         )
-        os.system(f"cd {patched_repo.repo_path} && git apply {patch_file}")
+        os.system(f"cd {patched_repo.repo_path} && patch -p0 -i {patch_file}")
         self.console.printb(
             f"The patched repository is placed at: {patched_repo.repo_path}"
         )
