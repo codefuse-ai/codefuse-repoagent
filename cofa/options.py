@@ -18,7 +18,8 @@ def parse_repo(args: any) -> Repository:
         o, n = f.split("/", maxsplit=1)
     except ValueError:
         raise ArgumentError(
-            'Invalid argument for "repository". It should be formatted in "org/name:path" such as "torvalds/linux:/path/to/my/linux/mirror".'
+            'Invalid argument for "repository". It should be formatted '
+            'in "org/name:path" such as "torvalds/linux:/path/to/my/linux/mirror".'
         )
     repo_path = Path(p)
     if not repo_path.exists():
@@ -47,7 +48,8 @@ def parse_llms(args: any) -> LLMConfig:
         p, m = args.model.split(":", maxsplit=1)
     except ValueError:
         raise ArgumentError(
-            'Invalid argument for "--model". It should be in the format of "provider:model" such as "openai:gpt-4o", "ollama:qwen2:0.5b-instruct".'
+            'Invalid argument for "--model". It should be in the format '
+            'of "provider:model" such as "openai:gpt-4o", "ollama:qwen2:0.5b-instruct".'
         )
     return LLMConfig(
         provider=p,
@@ -68,13 +70,15 @@ def make_common_options(parser: ArgumentParser):
     # Options related to the repository
     parser.add_argument(
         "repository",
-        help='The repository in the format of "org/name:path" such as "torvalds/linux:/path/to/my/linux/mirror"',
+        help='The repository in the format of "org/name:path" '
+        'such as "torvalds/linux:/path/to/my/linux/mirror"',
     )
     parser.add_argument(
         "--excludes",
         type=str,
         action="append",
-        help="Files (UNIX shell-style patterns) in the repository to exclude in the whole process; this can be specified multiple times",
+        help="Files (UNIX shell-style patterns) in the repository to "
+        "exclude in the whole process; this can be specified multiple times",
     )
     # Options related to the user query
     parser.add_argument(
@@ -82,13 +86,15 @@ def make_common_options(parser: ArgumentParser):
         "-q",
         required=True,
         type=str,
-        help="The user query against the repository; either a simple string or a path to a UTF-8 file saving the query",
+        help="The user query against the repository; "
+        "either a simple string or a path to a UTF-8 file saving the query",
     )
     parser.add_argument(
         "--includes",
         type=str,
         action="append",
-        help="Files (UNIX shell-style patterns) to consider when retrieving relevant context for the user query; this can be specified multiple times",
+        help="Files (UNIX shell-style patterns) to consider when retrieving "
+        "relevant context for the user query; this can be specified multiple times",
     )
     # Options related to the LM (language model)
     parser.add_argument(
@@ -96,7 +102,8 @@ def make_common_options(parser: ArgumentParser):
         "-m",
         required=True,
         type=str,
-        help='The assistive LM in the format of "provider:model" such as "openai:gpt-4o", "ollama:qwen2:0.5b-instruct"',
+        help='The assistive LM in the format of "provider:model" such as '
+        '"openai:gpt-4o", "ollama:qwen2:0.5b-instruct"',
     )
     parser.add_argument(
         "--model-temperature",
@@ -121,7 +128,7 @@ def make_common_options(parser: ArgumentParser):
     )
     parser.add_argument(
         "--model-max-tokens",
-        "-M",
+        "-L",
         default=1024,
         type=int,
         help="Parameter max-tokens controlling the LM's maximum number of tokens to generate",
