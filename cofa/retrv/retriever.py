@@ -214,11 +214,13 @@ class Retriever(EventEmitter):
 
     def retrieve(self, query, files_only: bool = False, num_proc: int = 1) -> List[str]:
         # Rewrite the query; this may involving summarization, etc.
+        self.console.printb(f"QRW: Rewriting the user query using {self.rewriter} ...")
         query_r = (
             self.rewriter.rewrite(query)
-            if len(query.split()) > CofaConfig.QSM_WORD_SIZE
+            if len(query.split()) > CofaConfig.QRW_WORD_SIZE
             else query
         )
+        self.console.printb(f"The query after rewriting is: {query_r}")
 
         # Analyze the query and find all plausible definition files
         edl_res = self.lookup_entity_definition(

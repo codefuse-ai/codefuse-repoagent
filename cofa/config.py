@@ -6,10 +6,8 @@ from dotenv import load_dotenv
 
 
 class _CofaRetrieverConfigMixin:
-    # Query Summarization
-    QSM_WORD_SIZE = 40
-    QSM_STRATEGY_NAME_NO_QSM = "disable-qsm"
-    QSM_STRATEGY = QSM_STRATEGY_NAME_NO_QSM
+    # Query Rewrite
+    QRW_WORD_SIZE = 40
 
     # Entity Definition Lookup
     EDL_FILE_LIMIT = 10
