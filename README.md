@@ -38,7 +38,7 @@ The main usage of Swell is to resolve issues. Based on Repoet-retrieved contexts
 
 ```shell
 conda create -f environment.yaml
-conda activate cofa_venv
+conda activate swell_venv
 ```
 
 ## 🔍 Retrieve Context

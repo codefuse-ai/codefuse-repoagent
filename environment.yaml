@@ -1,4 +1,4 @@
-name: cofa_venv
+name: swell_venv
 channels:
   - defaults
 dependencies:
