@@ -1,7 +1,6 @@
 from argparse import ArgumentParser
 from typing import List, Optional
 
-import swell.retrv.retriever as cfar
 from swell import options
 from swell.agents.rewrite.base import RewriterBase
 from swell.agents.rewrite.dont import DontRewrite
@@ -10,6 +9,7 @@ from swell.base.console import get_boxed_console
 from swell.config import SwellConfig
 from swell.llms.factory import LLMConfig
 from swell.repo.repo import Repository
+from swell.retrv import retrv
 
 
 def retrieve(
@@ -24,7 +24,7 @@ def retrieve(
 ) -> List[str]:
     console = get_boxed_console(
         box_title="REPOET",
-        box_bg_color=cfar.DEBUG_OUTPUT_LOGGING_COLOR,
+        box_bg_color=retrv.DEBUG_OUTPUT_LOGGING_COLOR,
         debug_mode=True,
     )
 
@@ -33,7 +33,7 @@ def retrieve(
     )
 
     console.printb(f"Retrieving relevant context for query:\n```\n{query}\n```")
-    retr = cfar.Retriever(
+    retriever = retrv.Retriever(
         repo,
         use_llm=use_llm,
         includes=includes,
@@ -41,7 +41,7 @@ def retrieve(
         rewriter=rewriter,
     )
 
-    snip_ctx = retr.retrieve(
+    snip_ctx = retriever.retrieve(
         query,
         files_only=files_only,
         num_proc=num_proc,
