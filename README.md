@@ -36,10 +36,18 @@ The main usage of Swell is to resolve issues. Based on Repoet-retrieved contexts
 
 ## 📦 Installation
 
+First create a conda environment:
+
 ```shell
 conda create -f environment.yaml
 conda activate swell_venv
+mv env.template .env  # This saves some environment variables
 ```
+
+Then ensure your models were downloaded or set up some environment variables in:
+- If you'd prefer OpenAI, set up your API key in `.env`
+- If you'd prefer HuggingFace, either enable downloading in `.env` or download your models first
+- If you'd prefer Ollama, pull your models first
 
 ## 🔍 Retrieve Context
 
