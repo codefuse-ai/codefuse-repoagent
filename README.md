@@ -8,11 +8,15 @@
 
 <!-- TODO: Add Badges -->
 
-The CodeFuse Agent (CoFA) is a repository-level retrieval-augmented generation (r-RAG) agent aiming to address user queries toward a software repository.
+The CodeFuse Agent (CoFA) is a repository-level retrieval-augmented generation agent aiming to address user queries toward a software repository.
+
+---
 
 ## 🔥 News
 
 - **[Dec. 1, 2024]** We have released CoFA's primary component—the upstream retriever CodeFuse Agentic Retriever (CFAR).
+
+---
 
 ## 👏🏻 Overview
 
