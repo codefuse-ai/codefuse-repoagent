@@ -1,8 +1,8 @@
-<p align="center">
-  <img src="./.github/assets/codefuse.jpg" alt="CodeFuse" width="100%" align="center"/>
+<p style="text-align: center">
+  <img src="./.github/assets/codefuse.jpg" alt="CodeFuse" width="100%"/>
 </p>
 
-<div align="center">
+<div style="text-align: center">
     <h1>CodeFuse Agent (CoFA)</h1>
 </div>
 
