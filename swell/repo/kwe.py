@@ -3,7 +3,7 @@ from typing import Optional, List
 
 from swell.base.paths import SnippetPath
 from swell.base.repos import RepoBase
-from swell.config import CofaConfig
+from swell.config import SwellConfig
 from swell.kwe.engine import KwEng
 from swell.kwe.tokens import NGramTokenizer
 from swell.utils.generic import CastSelfToThis
@@ -62,6 +62,6 @@ class KwEngMixin(CastSelfToThis[RepoBase]):
 
     @property
     def _kwe_cache_file(self) -> Path:
-        return CofaConfig.keyword_index_cache_directory() / (
+        return SwellConfig.keyword_index_cache_directory() / (
             Path(self.this.repo_path).name + ".kwe"
         )

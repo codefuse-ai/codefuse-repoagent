@@ -5,7 +5,7 @@ from typing import Optional, List
 from dotenv import load_dotenv
 
 
-class _CofaRetrieverConfigMixin:
+class _RetrieverConfigMixin:
     # Query Rewrite
     QRW_WORD_SIZE = 40
 
@@ -42,7 +42,7 @@ class _CofaRetrieverConfigMixin:
     FINAL_FILE_LIMIT = 5
 
 
-class _CofaFileConfigMixin:
+class _FileConfigMixin:
     MAX_BYTES_PER_FILE = 240000  # Do not consider files exceeding this size
     MAX_FILES_PER_DIRECTORY = (
         100  # Do not consider directories containing files more than this number
@@ -169,7 +169,7 @@ class _CofaFileConfigMixin:
         )
 
 
-class CofaConfig(_CofaFileConfigMixin, _CofaRetrieverConfigMixin):
+class SwellConfig(_FileConfigMixin, _RetrieverConfigMixin):
     # Additional environments or overridden environments
     _additional_envs_ = {}
 
@@ -192,7 +192,9 @@ class CofaConfig(_CofaFileConfigMixin, _CofaRetrieverConfigMixin):
 
     @classmethod
     def keyword_index_cache_directory(cls) -> Path:
-        keyword_index_cache_directory = CofaConfig.cache_directory() / "keyword_indices"
+        keyword_index_cache_directory = (
+            SwellConfig.cache_directory() / "keyword_indices"
+        )
         if not keyword_index_cache_directory.exists():
             keyword_index_cache_directory.mkdir(parents=True)
         return keyword_index_cache_directory
@@ -204,5 +206,5 @@ class CofaConfig(_CofaFileConfigMixin, _CofaRetrieverConfigMixin):
 
 __ENV_LOADED = False
 if not __ENV_LOADED:
-    CofaConfig.load()
+    SwellConfig.load()
     __ENV_LOADED = True

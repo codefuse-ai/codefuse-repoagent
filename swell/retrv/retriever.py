@@ -11,7 +11,7 @@ from swell.agents.snippets.factory import SnipFinderFactory
 from swell.base.console import get_boxed_console
 from swell.base.ftree import FileTree
 from swell.base.paths import FilePath
-from swell.config import CofaConfig
+from swell.config import SwellConfig
 from swell.llms.factory import LLMFactory, LLMConfig
 from swell.repo.repo import Repository
 from swell.utils.event import EventEmitter
@@ -217,28 +217,28 @@ class Retriever(EventEmitter):
         self.console.printb(f"QRW: Rewriting the user query using {self.rewriter} ...")
         query_r = (
             self.rewriter.rewrite(query)
-            if len(query.split()) > CofaConfig.QRW_WORD_SIZE
+            if len(query.split()) > SwellConfig.QRW_WORD_SIZE
             else query
         )
         self.console.printb(f"The query after rewriting is: {query_r}")
 
         # Analyze the query and find all plausible definition files
         edl_res = self.lookup_entity_definition(
-            query_r, limit=CofaConfig.EDL_FILE_LIMIT
+            query_r, limit=SwellConfig.EDL_FILE_LIMIT
         )
 
         # TODO: Perhaps adding vector engines?
         # Search the keyword engine
         kws_res = self.search_keyword_engine(
-            query_r, limit=CofaConfig.KWS_FILE_LIMIT, skipping=set(edl_res)
+            query_r, limit=SwellConfig.KWS_FILE_LIMIT, skipping=set(edl_res)
         )
 
         starting_files = set(edl_res + kws_res)
 
         # Search other context by LLMs, starting from files found by file name extractor and keyword engine
-        if CofaConfig.FTE_STRATEGY in [
-            CofaConfig.FTE_STRATEGY_NAME_FTD_GU,
-            CofaConfig.FTE_STRATEGY_NAME_FTD_TS,
+        if SwellConfig.FTE_STRATEGY in [
+            SwellConfig.FTE_STRATEGY_NAME_FTD_GU,
+            SwellConfig.FTE_STRATEGY_NAME_FTD_TS,
         ]:
             # We conservatively assume that the files we miss should be around these files (like in the same module)
             # So we go upward some layers and reshape the file tree before performing file finding.
@@ -246,23 +246,23 @@ class Retriever(EventEmitter):
                 query_r,
                 starting_files=starting_files,
                 # Just an experienced value
-                going_upward=CofaConfig.FTE_FTD_GOING_UPWARD,
+                going_upward=SwellConfig.FTE_FTD_GOING_UPWARD,
                 # We will try shrink the file tree if our file tree is too large if our strategy asks us to do so
                 give_up_early=(
-                    CofaConfig.FTE_STRATEGY == CofaConfig.FTE_STRATEGY_NAME_FTD_GU
+                    SwellConfig.FTE_STRATEGY == SwellConfig.FTE_STRATEGY_NAME_FTD_GU
                 ),
                 # Give up searching when the file tree exceeds this number
-                max_file_tree_size=CofaConfig.FTE_MAX_FILE_TREE_SIZE,
-                limit=CofaConfig.FTE_FILE_LIMIT,
+                max_file_tree_size=SwellConfig.FTE_MAX_FILE_TREE_SIZE,
+                limit=SwellConfig.FTE_FILE_LIMIT,
             )
-        elif CofaConfig.FTE_STRATEGY == CofaConfig.FTE_STRATEGY_NAME_NO_FTE:
+        elif SwellConfig.FTE_STRATEGY == SwellConfig.FTE_STRATEGY_NAME_NO_FTE:
             # Skip file tree exploration
             fte_res = self._give_up_ftree_exploration(
-                query_r, starting_files, [], file_limit=CofaConfig.FTE_FILE_LIMIT
+                query_r, starting_files, [], file_limit=SwellConfig.FTE_FILE_LIMIT
             )
         else:
             raise CannotReachHereError(
-                f"Unsupported FileTree Search Strategy: {CofaConfig.FTE_STRATEGY}"
+                f"Unsupported FileTree Search Strategy: {SwellConfig.FTE_STRATEGY}"
             )
 
         interm_res = list(OrderedDict.fromkeys(edl_res + kws_res + fte_res))
@@ -277,7 +277,7 @@ class Retriever(EventEmitter):
         )
         plausible_files = []
         for sc in sorted(file_score.keys(), reverse=True):
-            if sc >= CofaConfig.FPS_PREVIEW_SCORE_THRESHOLD:
+            if sc >= SwellConfig.FPS_PREVIEW_SCORE_THRESHOLD:
                 plausible_files.extend([r[0] for r in file_score[sc]])
         self.console.printb(
             f"Retained {len(plausible_files)} plausible files after reading their preview:\n"
@@ -320,11 +320,11 @@ class Retriever(EventEmitter):
     ):
         self.console.printb(f"SCR: Finding relevant snippets in file: {file}")
         snippet_finder = SnipFinderFactory.create(
-            CofaConfig.SCR_SNIPPET_FINDER,
+            SwellConfig.SCR_SNIPPET_FINDER,
             repo=self.repo,
             use_llm=self.use_llm,
-            use_determ=CofaConfig.SCR_SNIPPET_DETERM,
-            determ_args={"threshold": CofaConfig.SCR_SNIP_SCORER_THRESHOLD},
+            use_determ=SwellConfig.SCR_SNIPPET_DETERM,
+            determ_args={"threshold": SwellConfig.SCR_SNIP_SCORER_THRESHOLD},
             console=self.console,
         )
         if disable_debugging:
@@ -333,8 +333,8 @@ class Retriever(EventEmitter):
         return snippet_finder.find(
             query=query,
             file_path=file,
-            num_threads=CofaConfig.SCR_ENUM_FNDR_NUM_THREADS,
-            snippet_size=CofaConfig.SCR_ENUM_FNDR_SNIPPET_SIZE,
+            num_threads=SwellConfig.SCR_ENUM_FNDR_NUM_THREADS,
+            snippet_size=SwellConfig.SCR_ENUM_FNDR_SNIPPET_SIZE,
         )
 
     def _reshape_file_tree_heuristics(

@@ -7,7 +7,7 @@ from swell.agents.rewrite.base import RewriterBase
 from swell.agents.rewrite.dont import DontRewrite
 from swell.agents.rewrite.issue import IssueSummarizer
 from swell.base.console import get_boxed_console
-from swell.config import CofaConfig
+from swell.config import SwellConfig
 from swell.llms.factory import LLMConfig
 from swell.repo.repo import Repository
 
@@ -79,7 +79,7 @@ def main():
     llm = options.parse_llms(args)
 
     procs, threads = options.parse_perf(args)
-    CofaConfig.SCR_ENUM_FNDR_NUM_THREADS = threads
+    SwellConfig.SCR_ENUM_FNDR_NUM_THREADS = threads
 
     if args.query_as_issue:
         rewriter = IssueSummarizer(repo, use_llm=llm)

@@ -7,7 +7,7 @@ from swell.agents.snippets.score_snip import SnipScorer, SCORE_WEAK_RELEVANCE
 from swell.agents.snippets.split_file import EnumSnipFinder
 from swell.base.console import BoxedConsoleBase
 from swell.base.paths import SnippetPath, FilePath
-from swell.config import CofaConfig
+from swell.config import SwellConfig
 from swell.llms.factory import LLMConfig, LLMFactory
 from swell.repo.repo import Repository
 from swell.utils.interval import merge_overlapping_intervals
@@ -60,8 +60,8 @@ class SnipFinderFactory:
     ):
         try:
             ctor = {
-                CofaConfig.SCR_SNIPPET_FINDER_NAME_ENUM_FNDR: EnumSnipFinder,
-                CofaConfig.SCR_SNIPPET_FINDER_NAME_PREV_FNDR: PrevSnipFinder,
+                SwellConfig.SCR_SNIPPET_FINDER_NAME_ENUM_FNDR: EnumSnipFinder,
+                SwellConfig.SCR_SNIPPET_FINDER_NAME_PREV_FNDR: PrevSnipFinder,
             }[name]
         except KeyError:
             raise CannotReachHereError(f"Unsupported snippet finder: {name}")
@@ -100,11 +100,11 @@ class SnipFinderFactory:
     def _create_determ(determ: str, use_llm: LLMConfig, **kwargs) -> SnipRelDetmBase:
         try:
             return {
-                CofaConfig.SCR_SNIPPET_DETERM_NAME_SNIP_SCORER: SnipScorer(
+                SwellConfig.SCR_SNIPPET_DETERM_NAME_SNIP_SCORER: SnipScorer(
                     LLMFactory.create(use_llm),
                     threshold=kwargs.get("threshold", SCORE_WEAK_RELEVANCE),
                 ),
-                CofaConfig.SCR_SNIPPET_DETERM_NAME_SNIP_JUDGE: SnipJudge(
+                SwellConfig.SCR_SNIPPET_DETERM_NAME_SNIP_JUDGE: SnipJudge(
                     LLMFactory.create(use_llm),
                 ),
             }[determ]

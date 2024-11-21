@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 from swell.base.paths import SnippetPath, FilePath
-from swell.config import CofaConfig
+from swell.config import SwellConfig
 from swell.splits.factory import SplFactory
 from swell.utils.misc import CannotReachHereError
 from swell.utils.pattern import match_any_pattern
@@ -144,7 +144,7 @@ class RepoBase:
     def get_file_content(
         self, file_path: str, add_lines: bool = False, san_cont: bool = False
     ) -> str:
-        san_cont = san_cont or CofaConfig.sanitize_content_in_repository()
+        san_cont = san_cont or SwellConfig.sanitize_content_in_repository()
         file_path = Path(self.repo_path) / file_path
         if not file_path.exists():
             raise FileNotFoundError(f"File {file_path} does not exist.")
@@ -208,9 +208,9 @@ class RepoBase:
         return dir_list[random.randint(0, len(dir_list) - 1)]
 
     def should_exclude(self, file_path: str):
-        return match_any_pattern(file_path, self.excludes) or CofaConfig.should_exclude(
-            os.path.join(self.repo_path, file_path)
-        )
+        return match_any_pattern(
+            file_path, self.excludes
+        ) or SwellConfig.should_exclude(os.path.join(self.repo_path, file_path))
 
     def ensure_repository_chunked(self):
         if self._snippets:
