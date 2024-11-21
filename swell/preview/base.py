@@ -22,6 +22,9 @@ class FilePreview:
     def register(cls, file_types: List[str]):
         def register_inner(preview_cls: Type["FilePreview"]):
             for ft in file_types:
+                assert (
+                    ft not in cls._PREVIEW_DICT
+                ), f"Conflicted previewers: {preview_cls} and {cls._PREVIEW_DICT[ft]} are both requesting for {ft}."
                 cls._PREVIEW_DICT[ft] = preview_cls
             return preview_cls
 
