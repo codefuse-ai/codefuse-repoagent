@@ -46,7 +46,7 @@ conda activate swell_venv
 Repoet can be executed in separate to retrieve relevant context for a user query:
 
 ```shell
-python -m cofa.repoet -q <user_query> -m <lang_model> <repository>
+python -m swell.repoet -q <user_query> -m <lang_model> <repository>
 ```
 
 ## 🚀 Fix Issues (WIP)
@@ -57,7 +57,7 @@ python -m cofa.repoet -q <user_query> -m <lang_model> <repository>
 Swell supports generating a plausible patch to fix a given issue for a repository:
 
 ```shell
-python -m cofa.swell -i <issue_text> -e <eval_script> -M 20 <repository>
+python -m swell.swell -i <issue_text> -e <eval_script> -M 20 <repository>
 ```
 
 If an evaluation script is provided, Swell generates a patch until the evaluation script considers the issue has been fixed or Swell reaches the max number of allowed attempts. In this context, Swell applies the generated patch on the repository and passes the issue and the new repository's path to the evaluation script.
