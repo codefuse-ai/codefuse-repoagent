@@ -1,6 +1,22 @@
-## CodeFuse Agent (CoFA)
+<p align="center">
+  <img src="./.github/assets/codefuse.jpg" alt="CodeFuse" width="100%" align="center"/>
+</p>
 
-The CodeFuse Agent (CoFA) is a repository-level retrieval-augmented generation (r-RAG) agent aiming to address user queries toward a software repository. It utilizes its upstream agentic retriever, the CodeFuse Agentic Retriever (CFAR), to fetch relevant context. It adapts these relevant context into task-specific, downstream prompt to effectively generate responses to user queries.
+<div align="center">
+    <h1>CodeFuse Agent (CoFA)</h1>
+</div>
+
+<!-- TODO: Add Badges -->
+
+The CodeFuse Agent (CoFA) is a repository-level retrieval-augmented generation (r-RAG) agent aiming to address user queries toward a software repository.
+
+## 🔥 News
+
+- **[Dec. 1, 2024]** We have released CoFA's primary component—the upstream retriever CodeFuse Agentic Retriever (CFAR).
+
+## 👏🏻 Overview
+
+CoFA utilizes its upstream agentic retriever, the CodeFuse Agentic Retriever (CFAR), to fetch relevant context. Then, it adapts these relevant context into task-specific, downstream prompt to effectively generate responses to user queries.
 
 To effectively extract the relevant context—certain lines of code or documentation, referred to as snippets—from the repository, CFAR presents a novel yet simple composite approach. CFAR founds on a classical keyword-based search engine, while it employs modern language models (LMs) for further, assistive refinement. CFAR is built upon the key observation that while classical engines may lack some accuracy, the contexts they retrieve are often close to the actual context (or ground truth) necessary to address a user query. The observation is reflected in twofold:
 + Although not significant, the keyword engine is already able to recall a moderate portion of ground-truth files;
@@ -51,3 +67,5 @@ Below are checkers/hooks we have enabled:
 + Python: We use Ruff's lint and format the code; check [all rules](https://docs.astral.sh/ruff/rules/) if your commits fail. Check [ruff.md](./docs/ruff.md) to configure Ruff in PyCharm.
 + Commit: We apply Conventional Commits to format all commit messages; check [the rules](https://www.conventionalcommits.org/) to configure its format.
 + MISC: We also apply some misc checkers for example YAML.
+
+<!-- Add "Cite Us" -->
