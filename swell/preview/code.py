@@ -45,7 +45,6 @@ def _extract_words(string):
         "ocaml",
         "perl",
         "php",
-        "python",
         "r",
         "rst",
         "ruby",
