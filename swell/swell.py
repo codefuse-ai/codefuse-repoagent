@@ -59,9 +59,9 @@ class EvalScript:
     @classmethod
     def spawn_process(cls, cmd, stdout, stderr, timeout) -> subprocess.CompletedProcess:
         # Fix: subprocess.run(cmd) series methods, when timed out, only send a SIGTERM
-        # signal to cmd while does not kill cmd's subprocess. We let each command to run
+        # signal to cmd while does not kill cmd's subprocess. We let each command run
         # in a new process group by adding start_new_session flag, and kill the whole
-        # process group such that all cmds' subprocesses are also killed when timed out.
+        # process group such that all cmd's subprocesses are also killed when timed out.
         with subprocess.Popen(
             cmd, stdout=stdout, stderr=stderr, start_new_session=True
         ) as proc:
