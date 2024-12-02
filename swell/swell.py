@@ -165,14 +165,8 @@ def parse_args():
     parser = ArgumentParser()
     options.make_common_options(parser)
     parser.add_argument(
-        "--issue",
-        "-i",
-        dest="query",
-        help="The issue to resolve; this is an alias of --query",
-    )
-    parser.add_argument(
         "--issue-id",
-        "-ID",
+        "-i",
         required=True,
         type=str,
         help="The ID of the issue, this is used by the evaluation script for referring to the issue.",

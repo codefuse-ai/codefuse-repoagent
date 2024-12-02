@@ -54,7 +54,10 @@ Then ensure your models were downloaded or set up some environment variables in:
 Repoet can be executed in separate to retrieve relevant context for a user query:
 
 ```shell
-python -m swell.repoet -q <user_query> -m <lang_model> <repository>
+python -m swell.repoet      \
+    -q <user_query>         \
+    -m <lang_model>         \
+    <repository>
 ```
 
 ## 🚀 Fix Issues (WIP)
@@ -65,10 +68,17 @@ python -m swell.repoet -q <user_query> -m <lang_model> <repository>
 Swell supports generating a plausible patch to fix a given issue for a repository:
 
 ```shell
-python -m swell.swell -i <issue_text> -e <eval_script> -M 20 <repository>
+python -m swell.swell       \
+    -q <issue_text>         \
+    -i <issue_id>           \
+    -m <lang_model>         \
+    -e <eval_script>        \
+    --eval-args <eval_args> \
+    -M <max_retries>        \
+    <repository>
 ```
 
-If an evaluation script is provided, Swell generates a patch until the evaluation script considers the issue has been fixed or Swell reaches the max number of allowed attempts. In this context, Swell applies the generated patch on the repository and passes the issue and the new repository's path to the evaluation script.
+If an evaluation script (i.e., `-e`) is provided, Swell generates a patch until the evaluation script considers the issue has been fixed or Swell reaches the max number of allowed attempts. In this context, Swell applies the generated patch on the repository and passes the issue and the new repository's path to the evaluation script. Otherwise, Swell merely generates a plausible patch without evaluating its correctness.
 
 ## 👨‍💻‍ Contributions
 
