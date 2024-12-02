@@ -25,10 +25,21 @@ class EvalScript:
         self.eval_args = eval_args or ""
         self.console = console
 
-    def __call__(self, issue_id: str, repo: Repository, *args, **kwargs) -> bool:
+    def __call__(
+        self,
+        issue_id: str,
+        patch_str: str,
+        patched_repo: Repository,
+        original_repo: Repository,
+        *args,
+        **kwargs,
+    ) -> bool:
         try:
             self.check_call(
-                f"{self.eval_script} {issue_id} {repo.repo_path} {self.eval_args}",
+                f"{self.eval_script} "
+                f"{issue_id} {patch_str} "
+                f"{original_repo.repo_path} {patched_repo.repo_path} "
+                f"{self.eval_args}",
                 timeout=5 * 60,
             )
             return True
@@ -178,7 +189,9 @@ def parse_args():
         type=str,
         help="Path to a script for evaluating if the patched repository could resolve the issue."
         "The first argument of the script should be the ID of the issue."
-        "The second argument of the script is an absolute path to the patched repository."
+        "The second argument of the script is a string of the patch in the format of unified diff."
+        "The third argument of the script is an absolute path to the original repository."
+        "The fourth argument of the script is an absolute path to the patched repository."
         'All the rest arguments should be passed via "--eval-args"',
     )
     parser.add_argument(

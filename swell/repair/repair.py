@@ -17,7 +17,15 @@ DEBUG_OUTPUT_LOGGING_TITLE = "Repairer"
 
 
 class PatchEval(Protocol):
-    def __call__(self, issue_id: str, repo: Repository, *args, **kwargs) -> bool: ...
+    def __call__(
+        self,
+        issue_id: str,
+        patch_str: str,
+        original_repo: Repository,
+        patched_repo: Repository,
+        *args,
+        **kwargs,
+    ) -> bool: ...
 
 
 class IssueRepa:
@@ -80,7 +88,14 @@ class IssueRepa:
             f"The patched repository is placed at: {patched_repo.repo_path}"
         )
         self.console.printb("Evaluating if the patched repository could pass all tests")
-        passed = eval_func(issue_id=issue_id, repo=patched_repo, *args, **kwargs)
+        passed = eval_func(
+            issue_id=issue_id,
+            patch_str=patch_str,
+            original_repo=self.repo,
+            patched_repo=patched_repo,
+            *args,
+            **kwargs,
+        )
         if not passed:
             self.console.printb("Failed! The plausible patch failed on some tests!")
         else:
