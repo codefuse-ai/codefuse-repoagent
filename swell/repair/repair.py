@@ -1,5 +1,5 @@
-import os
 import shutil
+import subprocess
 import tempfile
 from pathlib import Path
 from typing import Protocol, Optional, List
@@ -10,6 +10,7 @@ from swell.llms.factory import LLMFactory, LLMConfig
 from swell.repair.patch import PatchGen
 from swell.repair.refine import SnipRefiner
 from swell.repo.repo import Repository
+from swell.utils import cmdline
 from swell.utils.parallel import parallel
 
 DEBUG_OUTPUT_LOGGING_COLOR = "grey50"
@@ -83,7 +84,11 @@ class IssueRepa:
         shutil.copytree(
             self.repo.repo_path, patched_repo.repo_path, dirs_exist_ok=False
         )
-        os.system(f"cd {patched_repo.repo_path} && patch -p0 -i {patch_file}")
+        try:
+            cmdline.check_call(f"patch -p0 -d {patched_repo.repo_path} -i {patch_file}")
+        except subprocess.CalledProcessError as e:
+            self.console.printb(f"The generated patch is invalid: {e.stderr}")
+            return False
         self.console.printb(
             f"The patched repository is placed at: {patched_repo.repo_path}"
         )
