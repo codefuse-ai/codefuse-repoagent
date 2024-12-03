@@ -20,7 +20,8 @@ CodeFuse Swell (or Swell) is a repository-level retrieval-augmented generation a
 
 ## 🔥 News
 
-- **[Dec. 1, 2024]** We have released Swell's primary component—the upstream retriever CodeFuse Repoet (or Repoet).
+- **[Dec. 1, 2024]** We released Swell's primary component—the upstream retriever CodeFuse Repoet (or Repoet).
+- **[Dec. 3, 2024]** We released Swell's downstream issue-fix agent, as well as its SWE-bench variant SWE-kit.
 
 ---
 
