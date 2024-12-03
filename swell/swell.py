@@ -1,6 +1,3 @@
-import os
-import shlex
-import signal
 import subprocess
 from argparse import ArgumentParser
 from pathlib import Path
@@ -15,6 +12,7 @@ from swell.options import ArgumentError
 from swell.repair import repair
 from swell.repo.repo import Repository
 from swell.retrv import retrv
+from swell.utils import cmdline
 
 
 class EvalScript:
@@ -35,7 +33,7 @@ class EvalScript:
         **kwargs,
     ) -> bool:
         try:
-            self.check_call(
+            cmdline.check_call(
                 f"{self.eval_script} "
                 f"{issue_id} {patch_str} "
                 f"{original_repo.repo_path} {patched_repo.repo_path} "
@@ -56,41 +54,6 @@ class EvalScript:
                     f"The patche does not pass all tests (exit_code={ecode})."
                 )
             return False
-
-    @classmethod
-    def check_call(cls, cmd: str, timeout: int = 5):
-        proc = cls.spawn_process(
-            shlex.split(cmd),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            timeout=timeout,
-        )
-        proc.check_returncode()
-
-    @classmethod
-    def spawn_process(cls, cmd, stdout, stderr, timeout) -> subprocess.CompletedProcess:
-        # Fix: subprocess.run(cmd) series methods, when timed out, only send a SIGTERM
-        # signal to cmd while does not kill cmd's subprocess. We let each command run
-        # in a new process group by adding start_new_session flag, and kill the whole
-        # process group such that all cmd's subprocesses are also killed when timed out.
-        with subprocess.Popen(
-            cmd, stdout=stdout, stderr=stderr, start_new_session=True
-        ) as proc:
-            try:
-                output, err_msg = proc.communicate(timeout=timeout)
-            except:  # Including TimeoutExpired, KeyboardInterrupt, communicate handled that.
-                cls.safe_killpg(os.getpgid(proc.pid), signal.SIGKILL)
-                # We don't call proc.wait() as .__exit__ does that for us.
-                raise
-            ecode = proc.poll()
-        return subprocess.CompletedProcess(proc.args, ecode, output, err_msg)
-
-    @staticmethod
-    def safe_killpg(pid, sig):
-        try:
-            os.killpg(pid, sig)
-        except ProcessLookupError:
-            pass  # Ignore if there is no such process
 
 
 def try_repair(
