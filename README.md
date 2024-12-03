@@ -1,13 +1,15 @@
-<p style="text-align: center">
+<div align="center">
   <img src="./.github/assets/codefuse.jpg" alt="CodeFuse" width="100%"/>
-</p>
+</div>
 
-<div style="text-align: center">
+<div align="center">
     <h1>CodeFuse Swell</h1>
 </div>
 
-<div style="text-align: center">
- | [中文](docs/README_zh.md) | [English](README.md) |
+<div align="center">
+
+  | [中文](docs/README_zh.md) | [English](README.md) |
+
 </div>
 
 <!-- TODO: Add Badges -->
