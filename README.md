@@ -80,6 +80,29 @@ python -m swell.swell       \
 
 If an evaluation script (i.e., `-e`) is provided, Swell generates a patch until the evaluation script considers the issue has been fixed or Swell reaches the max number of allowed attempts. In this context, Swell applies the generated patch on the repository and passes the issue and the new repository's path to the evaluation script. Otherwise, Swell merely generates a plausible patch without evaluating its correctness.
 
+## 🐑 Fix SWE-bench (WIP)
+
+> [!WARNING]
+> This section is still working in progress
+
+Swell's SWE-kit supports generating patches for SWE-bench issues. To evaluate if the generated patch can pass SWE-bench, we have to install SWE-bench first:
+
+```shell
+git clone git@github.com:princeton-nlp/SWE-bench.git
+cd SWE-bench
+pip install -e .
+```
+
+After that, Swell can generate patches and evaluating the generated patch via SWE-bench.
+
+```shell
+python -m swell.swekit      \
+    -d <dataset_id>         \
+    -m <lang_model>         \
+    -M <max_retries>        \
+ <instance_id>
+```
+
 ## 👨‍💻‍ Contributions
 
 Swell enforces a series of pre-commit checks that our contributors should follow. Before contributing to this project, developers are required to install our checkers:
