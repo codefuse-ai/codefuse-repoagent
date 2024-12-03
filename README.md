@@ -39,7 +39,7 @@ The main usage of Swell is to resolve issues. Based on Repoet-retrieved contexts
 First create a conda environment:
 
 ```shell
-conda create -f environment.yaml
+conda env create -f environment.yaml
 conda activate swell_venv
 mv env.template .env  # This saves some environment variables
 ```
