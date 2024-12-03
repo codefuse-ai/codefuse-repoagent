@@ -75,7 +75,11 @@ class SummaryGen(RewriterBase):
         ), "Update cannot be called as no prompt/returns/keys are given"
         resp = SimpleAgent(
             llm=LLMFactory.create(self.use_llm), returns=self.upd_returns
-        ).run(self.upd_prompt.format(summary=summary, query=query))
+        ).run(
+            self.upd_prompt.format(
+                repo=self.repo.full_name, summary=summary, query=query
+            )
+        )
         return resp[self.upd_sum_key]
 
 
