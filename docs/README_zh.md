@@ -67,7 +67,7 @@ python -m swell.repoet      \
 > [!WARNING]
 > This section is still working in progress.
 
-Swell 可以为仓库中的某个缺陷生成修复该缺陷的 patch:
+Swell 可以为仓库中的某个缺陷生成修复该缺陷的补丁（patch）:
 
 ```shell
 python -m swell.swell       \
@@ -80,14 +80,14 @@ python -m swell.swell       \
     <repository>
 ```
 
-If an evaluation script (i.e., `-e`) is provided, Swell generates a patch until the evaluation script considers the issue has been fixed or Swell reaches the max number of allowed attempts. In this context, Swell applies the generated patch on the repository and passes the issue and the new repository's path to the evaluation script. Otherwise, Swell merely generates a plausible patch without evaluating its correctness.
+如果提供了评估脚本（即 `-e`），Swell 将使用该脚本评估所生成的补丁是否能够通过该脚本的测试。若未通过，Swell 将重试，直到生成能够通过该脚本的补丁或达到被允许尝试的最大尝试次数（即 `-M`）。若没有提供评估脚本，，Swell 仅生成一个看似合理的补丁，而不评估其正确性。
 
 ## 🐑 SWE-bench (WIP)
 
 > [!WARNING]
 > This section is still working in progress
 
-Swell 的 SWE-kit 可以修复 SWE-bench 数据集中的缺陷。为了验证 Swell 生成的 patch 是否可以通过 SWE-bench 中收录的测试，首先需要安装 SWE-bench:
+Swell 的 SWE-kit 可以修复 SWE-bench 数据集中的缺陷。为了验证 Swell 生成的补丁是否可以通过 SWE-bench 中收录的测试，首先需要安装 SWE-bench:
 
 ```shell
 git clone git@github.com:princeton-nlp/SWE-bench.git
@@ -95,7 +95,7 @@ cd SWE-bench
 pip install -e .
 ```
 
-然后，便可以用 SWE-kit 尝试为某个缺陷生成 patch：
+然后，便可以用 SWE-kit 尝试为某个缺陷生成补丁：
 
 ```shell
 python -m swell.swekit      \
