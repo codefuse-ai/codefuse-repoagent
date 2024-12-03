@@ -34,6 +34,10 @@ def eval_by_swebench(
     def _print(m_):
         console.printb(m_, title="SWE-bench")
 
+    dataset_id = kwargs["dataset_id"]
+    dataset_split = kwargs["dataset_split"]
+    model_name = "swekit"
+
     patch_hash = hash(patch_str)
     patch_jsonl = (
         Path(patched_repo.repo_path) / f"swekit_patch_{instance_id}_{patch_hash}.jsonl"
@@ -41,7 +45,7 @@ def eval_by_swebench(
     with patch_jsonl.open("w") as fou:
         json.dump(
             {
-                "model_name_or_path": "swell",
+                "model_name_or_path": model_name,
                 "instance_id": instance_id,
                 "model_patch": patch_str,
             },
@@ -52,24 +56,25 @@ def eval_by_swebench(
     run_id = f"swekit_{instance_id}_{patch_hash}"
     try:
         cmdline.check_call(
-            "python -m swebench.harness.run_evaluation"
-            "--dataset_name princeton-nlp/SWE-bench_Lite"
+            "python -m swebench.harness.run_evaluation "
+            f"--dataset_name {dataset_id} "
+            f"--split {dataset_split} "
             f"--predictions_path {patch_jsonl} "
-            f"--max_workers 2"
-            f"--run_id {run_id}\n",
+            f"--instance_ids {instance_id} "
+            f"--max_workers 2 "
+            f"--run_id {run_id}",
             timeout=5 * 60,
         )
     except Exception as e:
         _print(f"Patch evaluation failed: {e}")
         return False
-    res_path = Path(
-        f"swebench/logs/run_evaluation/{run_id}/swell/{instance_id}/report.json"
-    )
-    if not res_path.exists():
+    log_dir = Path(f"logs/run_evaluation/{run_id}/{model_name}/{instance_id}")
+    rep_path = log_dir / "report.json"
+    if not rep_path.exists():
         return False
-    with res_path.open() as res_file:
-        eval_res = json.load(res_file)
-    return eval_res[instance_id]["resolved"]
+    with rep_path.open() as fin:
+        rep_res = json.load(fin)
+    return rep_res[instance_id]["resolved"]
 
 
 def load_instance(
@@ -101,6 +106,7 @@ def fix_instance(
     num_retries: int,
     num_proc: int,
     debug_mode: bool,
+    dataset_split: str = "test",
     repo_path: Optional[Path] = None,
 ) -> Optional[str]:
     # # Setup required configs
@@ -115,7 +121,7 @@ def fix_instance(
 
     # Get the issue and the repository according to the instance
     console.printb("Loading SWE-bench, the instance, and the repository")
-    _, instance = load_instance(instance_id, dataset_id=dataset_id, split="test")
+    _, instance = load_instance(instance_id, dataset_id=dataset_id, split=dataset_split)
     issue = instance["problem_statement"]
     repo_org, repo_name = instance["repo"].split("/", maxsplit=1)
     if not repo_path:
@@ -151,6 +157,8 @@ def fix_instance(
         eval_func=eval_by_swebench,
         num_retries=num_retries,
         num_proc=num_proc,
+        dataset_id=dataset_id,
+        dataset_split=dataset_split,
     )
     if patch:
         console.printb(f"The generated patch is: ```diff\n{patch}\n```")
@@ -234,6 +242,7 @@ def main():
     patch = fix_instance(
         instance,
         dataset_id=dataset,
+        dataset_split="test",
         use_llm=use_llm,
         num_proc=procs,
         num_retries=args.max_retries,
