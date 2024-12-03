@@ -1,4 +1,4 @@
-name: swell_venv
+name: swellvenv
 channels:
   - defaults
 dependencies:
@@ -36,3 +36,4 @@ dependencies:
       - tree-sitter==0.21.3
       - tree-sitter-languages==1.10.2
       - datasets==3.1.0
+      - ollama==0.3.3
