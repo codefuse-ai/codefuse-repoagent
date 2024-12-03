@@ -4,6 +4,8 @@ from typing import Optional, List
 
 from dotenv import load_dotenv
 
+from swell.utils import misc
+
 
 class _RetrieverConfigMixin:
     # Query Rewrite
@@ -201,7 +203,7 @@ class SwellConfig(_FileConfigMixin, _RetrieverConfigMixin):
 
     @classmethod
     def sanitize_content_in_repository(cls) -> bool:
-        return True if cls.get("SANITIZE_CONTENT_IN_REPOSITORY") else False
+        return misc.to_bool(cls.get("SANITIZE_CONTENT_IN_REPOSITORY"))
 
 
 __ENV_LOADED = False
