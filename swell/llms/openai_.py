@@ -1,8 +1,19 @@
+import openai
+
 from swell.llms.base import LLMBase
+
+_client = openai.OpenAI()
 
 
 def call_openai(model_name, messages, *, temperature, top_p, max_tokens):
-    raise NotImplementedError("OpenAI")
+    resp = _client.chat.completions.create(
+        model=model_name,
+        messages=messages,
+        temperature=temperature,
+        top_p=top_p,
+        max_completion_tokens=max_tokens,
+    )
+    return resp.choices[0].message.content
 
 
 class OpenAI(LLMBase):

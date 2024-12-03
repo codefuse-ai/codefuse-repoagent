@@ -17,6 +17,10 @@ class LLMConfig:
     top_p: float = field(default=0.95)
     max_tokens: int = field(default=1024)
 
+    @property
+    def max_completion_tokens(self) -> int:
+        return self.max_tokens
+
 
 class LLMFactory:
     @classmethod
