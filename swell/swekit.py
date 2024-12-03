@@ -102,7 +102,7 @@ def fix_instance(
     num_proc: int,
     debug_mode: bool,
     repo_path: Optional[Path] = None,
-):
+) -> Optional[str]:
     # # Setup required configs
     # SwellConfig.FTE_STRATEGY = ...
     # SwellConfig.QSM_STRATEGY = ...
@@ -160,6 +160,8 @@ def fix_instance(
     if should_download_repo:
         shutil.rmtree(repo_path)
 
+    return patch
+
 
 def parse_args():
     parser = ArgumentParser()
@@ -198,6 +200,14 @@ def parse_args():
         help="The max number of allowed attempts for evaluating the generated patch.",
     )
 
+    parser.add_argument(
+        "--output",
+        "-o",
+        type=str,
+        default="",
+        help="Save the generated patch that has passed SWE-bench's evaluation into a patch file",
+    )
+
     return parser.parse_args()
 
 
@@ -221,7 +231,7 @@ def main():
     procs, threads = options.parse_perf(args)
     SwellConfig.SCR_ENUM_FNDR_NUM_THREADS = threads
 
-    fix_instance(
+    patch = fix_instance(
         instance,
         dataset_id=dataset,
         use_llm=use_llm,
@@ -230,6 +240,10 @@ def main():
         debug_mode=args.verbose,
         repo_path=Path(args.repository) if args.repository else None,
     )
+
+    if args.output and patch:
+        with open(args.output, "w") as fou:
+            fou.write(patch)
 
 
 if __name__ == "__main__":
