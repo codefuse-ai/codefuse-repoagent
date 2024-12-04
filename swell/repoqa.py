@@ -10,17 +10,22 @@ from swell.cora import RepoAgent
 from swell.llms.factory import LLMConfig, LLMFactory
 
 SYSTEM_PROMPT = """\
-Please answer the following User Query according to the given Context.
+## Context ##
+
+{context}
 
 ## User Query ##
 
 {query}
 
-## Context ##
+## Response Plan ##
 
-{context}
+1. Read and understand the context provided from the codebase: {repo}.
+2. Analyze the user's query to determine the specific information they are seeking.
+3. Formulate a response that directly addresses the user's question by referencing the relevant parts of the provided context.
+4. Outline the steps or information needed to answer the query in a clear and logical sequence.
 
-## Your Answer ##
+## Answer ##
 
 """
 
@@ -29,9 +34,9 @@ class RespGen(AgentBase):
     def __init__(self, use_llm: LLMConfig):
         super().__init__(LLMFactory.create(use_llm), json_schema=None)
 
-    def respond(self, query: str, *, context: str) -> str:
+    def respond(self, query: str, *, context: str, repo: str) -> str:
         return self.run(
-            system_prompt=SYSTEM_PROMPT.format(query=query, context=context)
+            system_prompt=SYSTEM_PROMPT.format(query=query, context=context, repo=repo)
         )
 
 
@@ -48,6 +53,7 @@ class _Generator(GeneratorBase):
                     for sp in context
                 ]
             ),
+            repo=agent.repo.full_name,
         )
         agent.console.printb("Response: " + resp)
         return resp
