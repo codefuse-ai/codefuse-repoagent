@@ -106,6 +106,17 @@ python -m swell.swekit      \
  <instance_id>
 ```
 
+## 🤖 问题回答
+
+Swell's RepoQA 可以回答用户针对仓库的提问：
+
+```shell
+python -m swell.repoqa      \
+    -q <user_query>         \
+    -m <lang_model>         \
+    <repository>
+```
+
 ## 👨‍💻‍ 写给开发者
 
 为更好地维护仓库，Swell 设置了一系列预提交检查，比如代码风格检查、提交信息检查等。因此，在为该项目提交代码之前，开发者需要安装 Swell 所需的检查工具：

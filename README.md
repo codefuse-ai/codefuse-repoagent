@@ -106,6 +106,17 @@ python -m swell.swekit      \
  <instance_id>
 ```
 
+## 🤖 Answer Questions
+
+Swell's RepoQA can answer user's questions towards the repository:
+
+```shell
+python -m swell.repoqa      \
+    -q <user_query>         \
+    -m <lang_model>         \
+    <repository>
+```
+
 ## 👨‍💻‍ Contributions
 
 Swell enforces a series of pre-commit checks that our contributors should follow. Before contributing to this project, developers are required to install our checkers:
