@@ -1,17 +1,16 @@
 import subprocess
 from argparse import ArgumentParser
 from pathlib import Path
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, cast
 
 from swell import options
 from swell.agents.rewrite.issue import IssueSummarizer
-from swell.base.console import get_boxed_console, BoxedConsoleBase
-from swell.config import SwellConfig
-from swell.llms.factory import LLMConfig
+from swell.base.console import BoxedConsoleBase
+from swell.base.rag import GeneratorBase
+from swell.cora import RepoAgent
 from swell.options import ArgumentError
 from swell.repair import repair
 from swell.repo.repo import Repository
-from swell.retrv import retrv
 from swell.utils import cmdline
 
 
@@ -56,67 +55,47 @@ class EvalScript:
             return False
 
 
-def try_repair(
-    issue: str,
-    issue_id: str,
-    repo: Repository,
-    *,
-    use_llm: LLMConfig,
-    eval_script: Optional[str],
-    eval_args: Optional[str],
-    includes: List[str],
-    num_retries: int,
-    num_proc: int,
-    debug_mode: bool,
-):
-    # # Setup required configs
-    # SwellConfig.FTE_STRATEGY = ...
-    # SwellConfig.QSM_STRATEGY = ...
+class _Generator(GeneratorBase):
+    def __init__(
+        self,
+        eval_script: Optional[str],
+        eval_args: Optional[str],
+    ):
+        super().__init__()
+        self.eval_script = eval_script
+        self.eval_args = eval_args
 
-    console = get_boxed_console(
-        box_title="SWELL",
-        box_bg_color=repair.DEBUG_OUTPUT_LOGGING_COLOR,
-        debug_mode=True,
-    )
-
-    console.printb(
-        f"Loaded repository {repo.repo_org}/{repo.repo_name} from {repo.repo_path} ..."
-    )
-
-    console.printb(f"""Retrieving relevant context for the issue:\n```\n{issue}\n```""")
-    retr = retrv.Retriever(
-        repo,
-        use_llm=use_llm,
-        includes=includes,
-        rewriter=IssueSummarizer(repo, use_llm=use_llm),
-        debug_mode=debug_mode,
-    )
-
-    snip_ctx = retr.retrieve(query=issue, files_only=False, num_proc=num_proc)
-    console.printb(
-        "The retrieved context is:\n" + ("\n".join(["- " + sp for sp in snip_ctx]))
-    )
-
-    repa = repair.IssueRepa(repo, use_llm=use_llm, debug_mode=debug_mode)
-    if eval_script:
-        console.printb(
-            f"Generating a plausible patch that passed the evaluation script: {eval_script}"
+    def generate(self, issue: str, snip_ctx: List[str], **kwargs) -> any:
+        assert self.agent, "RepoAgent hasn't been injected. Please invoke inject_agent() before calling this method"
+        agent = cast(RepoAgent, self.agent)
+        issue_id = kwargs["issue_id"]
+        num_retries = kwargs["num_retries"]
+        repa = repair.IssueRepa(
+            agent.repo,
+            use_llm=agent.use_llm,
+            debug_mode=agent.debug_mode,
         )
-        patch = repa.try_repair(
-            issue,
-            issue_id,
-            snip_ctx,
-            EvalScript(eval_script, eval_args, console),
-            num_retries=num_retries,
-            num_proc=num_proc,
-        )
-    else:
-        console.printb("Generating a plausible patch (without evaluation script)")
-        patch = repa.gen_patch(issue, snip_ctx)
-    if patch:
-        console.printb(f"The generated patch is: ```diff\n{patch}\n```")
-    else:
-        console.printb("No available patches are generated.")
+        console = agent.console
+        if self.eval_script:
+            console.printb(
+                f"Generating a plausible patch that passed the evaluation script: {self.eval_script}"
+            )
+            patch = repa.try_repair(
+                issue,
+                issue_id,
+                snip_ctx,
+                EvalScript(self.eval_script, self.eval_args, console),
+                num_retries=num_retries,
+                num_proc=agent.num_proc,
+            )
+        else:
+            console.printb("Generating a plausible patch (without evaluation script)")
+            patch = repa.gen_patch(issue, snip_ctx)
+        if patch:
+            console.printb(f"The generated patch is: ```diff\n{patch}\n```")
+        else:
+            console.printb("No available patches are generated.")
+        return patch
 
 
 def parse_eval_script(args) -> Tuple[Optional[str], Optional[str]]:
@@ -183,21 +162,27 @@ def main():
     llm = options.parse_llms(args)
 
     procs, threads = options.parse_perf(args)
-    SwellConfig.SCR_ENUM_FNDR_NUM_THREADS = threads
 
     eval_script, eval_args = parse_eval_script(args)
 
-    try_repair(
-        issue,
-        issue_id=issue_id,
+    gen = _Generator(eval_script=eval_script, eval_args=eval_args)
+    swell = RepoAgent(
+        name="SWELL",
         repo=repo,
         includes=incl,
         use_llm=llm,
-        eval_script=eval_script,
-        eval_args=eval_args,
+        rewriter=IssueSummarizer(repo, use_llm=llm),
+        generator=_Generator(eval_script=eval_script, eval_args=eval_args),
         num_proc=procs,
-        num_retries=args.max_retries,
+        num_thread=threads,
+        files_as_context=False,
         debug_mode=args.verbose,
+    )
+    gen.inject_agent(swell)
+
+    swell.run(
+        query=issue,
+        generation_args={"issue_id": issue_id, "num_retries": args.max_retries},
     )
 
 

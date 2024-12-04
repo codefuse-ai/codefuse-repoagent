@@ -8,6 +8,7 @@ from swell.agents.rewrite.base import RewriterBase
 from swell.agents.rewrite.dont import DontRewrite
 from swell.agents.score_preview import PreviewScorer
 from swell.agents.snippets.factory import SnipFinderFactory
+from swell.base import rag
 from swell.base.console import get_boxed_console
 from swell.base.ftree import FileTree
 from swell.base.paths import FilePath
@@ -22,7 +23,7 @@ DEBUG_OUTPUT_LOGGING_COLOR = "grey50"
 DEBUG_OUTPUT_LOGGING_TITLE = "Retriever"
 
 
-class Retriever(EventEmitter):
+class Retriever(EventEmitter, rag.RetrieverBase):
     def __init__(
         self,
         repo: Repository,
@@ -212,8 +213,10 @@ class Retriever(EventEmitter):
         self.console.printb(f"File {file} is scored {score}: {reason}")
         return score, reason
 
-    def retrieve(self, query, files_only: bool = False, num_proc: int = 1) -> List[str]:
-        # Rewrite the query; this may involving summarization, etc.
+    def retrieve(
+        self, query, files_only: bool = False, num_proc: int = 1, **kwargs
+    ) -> List[str]:
+        # Rewrite the query; this may involve summarization, etc.
         self.console.printb(f"QRW: Rewriting the user query using {self.rewriter} ...")
         query_r = (
             self.rewriter.rewrite(query)
