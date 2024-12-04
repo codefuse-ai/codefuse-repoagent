@@ -165,7 +165,6 @@ def main():
 
     eval_script, eval_args = parse_eval_script(args)
 
-    gen = _Generator(eval_script=eval_script, eval_args=eval_args)
     swell = RepoAgent(
         name="SWELL",
         repo=repo,
@@ -178,8 +177,6 @@ def main():
         files_as_context=False,
         debug_mode=args.verbose,
     )
-    gen.inject_agent(swell)
-
     swell.run(
         query=issue,
         generation_args={"issue_id": issue_id, "num_retries": args.max_retries},
