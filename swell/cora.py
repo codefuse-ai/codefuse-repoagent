@@ -61,7 +61,10 @@ class RepoAgent(RAGBase):
         self.console.printb(
             f"Retrieving relevant context for the user query:\n```\n{query}\n```"
         )
+        # Setup required configs
         SwellConfig.SCR_ENUM_FNDR_NUM_THREADS = self.num_thread
+        # SwellConfig.FTE_STRATEGY = ...
+        # SwellConfig.QSM_STRATEGY = ...
 
     def after_retrieving(self, query: str, context: List[str], **kwargs):
         self.console.printb(

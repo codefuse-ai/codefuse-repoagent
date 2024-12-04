@@ -4,31 +4,32 @@ import subprocess
 import tempfile
 from argparse import ArgumentParser
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Tuple, List, Optional, cast
 
 from datasets import load_dataset
 
 from swell import options
 from swell.agents.rewrite.issue import IssueSummarizer
 from swell.base.console import get_boxed_console
+from swell.base.rag import GeneratorBase
 from swell.base.repos import RepoTup
-from swell.config import SwellConfig
+from swell.cora import RepoAgent
 from swell.llms.factory import LLMConfig
 from swell.options import ArgumentError
 from swell.repair import repair
 from swell.repo.repo import Repository
-from swell.retrv import retrv
 from swell.utils import cmdline
 
 
 def eval_by_swebench(
-    instance_id: str,
+    issue_id: str,
     patch_str: str,
-    _: Repository,
+    original_repo: Repository,
     patched_repo: Repository,
     *args,
     **kwargs,
 ) -> bool:
+    instance_id = issue_id
     console = kwargs["console"]
 
     def _print(m_):
@@ -77,98 +78,133 @@ def eval_by_swebench(
     return rep_res[instance_id]["resolved"]
 
 
-def load_instance(
-    instance_id: str, *, dataset_id: str, split: str
-) -> Tuple[dict, dict]:
-    raw_dataset = load_dataset(dataset_id, split=split)
-    dataset = {x["instance_id"]: x for x in raw_dataset}
-    if instance_id not in dataset:
-        raise ArgumentError(f"No instance with ID {instance_id} exists in {dataset_id}")
-    return dataset, dataset[instance_id]
+class _Generator(GeneratorBase):
+    def __init__(self, dataset_id: str, dataset_split: str):
+        super().__init__()
+        self.dataset_id = dataset_id
+        self.dataset_split = dataset_split
+
+    def generate(self, issue: str, context: List[str], **kwargs) -> any:
+        assert self.agent, "RepoAgent hasn't been injected. Please invoke inject_agent() before calling this method"
+        agent = cast(RepoAgent, self.agent)
+        instance_id = kwargs["instance_id"]
+        num_retries = kwargs["num_retries"]
+        repa = repair.IssueRepa(
+            agent.repo, use_llm=agent.use_llm, debug_mode=agent.debug_mode
+        )
+        agent.console.printb(
+            "Generating a plausible patch that can pass the SWE-bench testing"
+        )
+        patch = repa.try_repair(
+            issue,
+            issue_id=instance_id,
+            snip_paths=context,
+            eval_func=eval_by_swebench,
+            num_retries=num_retries,
+            num_proc=agent.num_proc,
+            dataset_id=self.dataset_id,
+            dataset_split=self.dataset_split,
+            console=agent.console,
+        )
+        if patch:
+            agent.console.printb(f"The generated patch is: ```diff\n{patch}\n```")
+        else:
+            agent.console.printb("No available patches are generated.")
+        return patch
 
 
-def download_repo(repo: str, *, commit: str) -> str:
-    url = f"https://github.com/{repo}"
-    repo_path = tempfile.mkdtemp()
-    try:
-        cmdline.check_call(f"git clone {url} {repo_path}", timeout=5 * 60)
-        cmdline.check_call(f"git -C {repo_path} checkout {commit}")
-    except subprocess.CalledProcessError | subprocess.TimeoutExpired:
-        raise
-    return repo_path
+class SWEKit:
+    def __init__(
+        self,
+        dataset_id: str,
+        *,
+        dataset_split: str,
+        use_llm: LLMConfig,
+        num_proc: int,
+        num_thread: int,
+        debug_mode: bool,
+    ):
+        self.dataset_id = dataset_id
+        self.dataset_split = dataset_split
+        self.dataset = None
+        self.use_llm = use_llm
+        self.num_proc = num_proc
+        self.num_thread = num_thread
+        self.debug_mode = debug_mode
+        self.console = get_boxed_console(
+            box_title="SWEKIT",
+            box_bg_color="gray50",
+            debug_mode=debug_mode,
+        )
 
+    def run(
+        self,
+        instance_id: str,
+        num_retries: int,
+        repo_path: Optional[Path] = None,
+    ):
+        self.console.printb("Loading SWE-bench, the instance, and the repository")
 
-def fix_instance(
-    instance_id: str,
-    *,
-    dataset_id: str,
-    use_llm: LLMConfig,
-    num_retries: int,
-    num_proc: int,
-    debug_mode: bool,
-    dataset_split: str = "test",
-    repo_path: Optional[Path] = None,
-) -> Optional[str]:
-    # # Setup required configs
-    # SwellConfig.FTE_STRATEGY = ...
-    # SwellConfig.QSM_STRATEGY = ...
+        if not self.dataset:
+            self.dataset = self._load_dataset()
+        if instance_id not in self.dataset:
+            raise ArgumentError(
+                f"No instance with ID {instance_id} exists in {self.dataset_id}"
+            )
 
-    console = get_boxed_console(
-        box_title="SWEKIT",
-        box_bg_color=repair.DEBUG_OUTPUT_LOGGING_COLOR,
-        debug_mode=True,
-    )
+        # Get the issue and the repository according to the instance
+        instance = self.dataset[instance_id]
+        issue = instance["problem_statement"]
+        repo_org, repo_name = instance["repo"].split("/", maxsplit=1)
+        if not repo_path:
+            should_download_repo = True
+            repo_path = self.download_repo(
+                instance["repo"], commit=instance["base_commit"]
+            )
+        else:
+            should_download_repo = False
+        repo = Repository(RepoTup(repo_org, repo_name, repo_path))
+        self.console.printb(f"The repository has been loaded into: {repo_path}")
 
-    # Get the issue and the repository according to the instance
-    console.printb("Loading SWE-bench, the instance, and the repository")
-    _, instance = load_instance(instance_id, dataset_id=dataset_id, split=dataset_split)
-    issue = instance["problem_statement"]
-    repo_org, repo_name = instance["repo"].split("/", maxsplit=1)
-    if not repo_path:
-        should_download_repo = True
-        repo_path = download_repo(instance["repo"], commit=instance["base_commit"])
-    else:
-        should_download_repo = False
-    repo = Repository(RepoTup(repo_org, repo_name, repo_path))
-    console.printb(f"The repository has been loaded into: {repo_path}")
+        # Create an RepoAgent to retrieve context and try resolving the issue
+        agent = RepoAgent(
+            name="SWEKit",
+            repo=repo,
+            includes=["*.py"],  # We focus on Python for SWE-bench
+            use_llm=self.use_llm,
+            rewriter=IssueSummarizer(repo, use_llm=self.use_llm),
+            generator=_Generator(self.dataset_id, self.dataset_split),
+            num_proc=self.num_proc,
+            num_thread=self.num_thread,
+            files_as_context=False,
+            debug_mode=self.debug_mode,
+        )
+        patch = agent.run(
+            query=issue,
+            generation_args={"instance_id": instance_id, "num_retries": num_retries},
+        )
 
-    console.printb(
-        f"""Retrieving relevant context for the instance ({instance_id}):\n```\n{issue}\n```"""
-    )
-    retr = retrv.Retriever(
-        repo,
-        use_llm=use_llm,
-        includes=["*.py"],  # We focus on Python for SWE-bench
-        rewriter=IssueSummarizer(repo, use_llm=use_llm),
-        debug_mode=debug_mode,
-    )
+        if should_download_repo:
+            shutil.rmtree(repo_path)
 
-    snip_ctx = retr.retrieve(query=issue, files_only=False, num_proc=num_proc)
-    console.printb(
-        "The retrieved context is:\n" + ("\n".join(["- " + sp for sp in snip_ctx]))
-    )
+        return patch
 
-    repa = repair.IssueRepa(repo, use_llm=use_llm, debug_mode=debug_mode)
-    console.printb("Generating a plausible patch that can pass the SWE-bench testing")
-    patch = repa.try_repair(
-        issue,
-        issue_id=instance_id,
-        snip_paths=snip_ctx,
-        eval_func=eval_by_swebench,
-        num_retries=num_retries,
-        num_proc=num_proc,
-        dataset_id=dataset_id,
-        dataset_split=dataset_split,
-    )
-    if patch:
-        console.printb(f"The generated patch is: ```diff\n{patch}\n```")
-    else:
-        console.printb("No available patches are generated.")
+    def _load_dataset(self):
+        return {
+            x["instance_id"]: x
+            for x in load_dataset(self.dataset_id, split=self.dataset_split)
+        }
 
-    if should_download_repo:
-        shutil.rmtree(repo_path)
-
-    return patch
+    @staticmethod
+    def download_repo(repo: str, *, commit: str) -> str:
+        url = f"https://github.com/{repo}"
+        repo_path = tempfile.mkdtemp()
+        try:
+            cmdline.check_call(f"git clone {url} {repo_path}", timeout=5 * 60)
+            cmdline.check_call(f"git -C {repo_path} checkout {commit}")
+        except subprocess.CalledProcessError | subprocess.TimeoutExpired:
+            raise
+        return repo_path
 
 
 def parse_args():
@@ -237,16 +273,18 @@ def main():
     use_llm = options.parse_llms(args)
 
     procs, threads = options.parse_perf(args)
-    SwellConfig.SCR_ENUM_FNDR_NUM_THREADS = threads
 
-    patch = fix_instance(
-        instance,
-        dataset_id=dataset,
+    swekit = SWEKit(
+        dataset,
         dataset_split="test",
         use_llm=use_llm,
         num_proc=procs,
-        num_retries=args.max_retries,
+        num_thread=threads,
         debug_mode=args.verbose,
+    )
+    patch = swekit.run(
+        instance,
+        num_retries=args.max_retries,
         repo_path=Path(args.repository) if args.repository else None,
     )
 

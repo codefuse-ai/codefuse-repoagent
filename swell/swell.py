@@ -26,8 +26,8 @@ class EvalScript:
         self,
         issue_id: str,
         patch_str: str,
-        patched_repo: Repository,
         original_repo: Repository,
+        patched_repo: Repository,
         *args,
         **kwargs,
     ) -> bool:
