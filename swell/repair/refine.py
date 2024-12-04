@@ -131,9 +131,9 @@ class SnipRefiner(AgentBase):
         refined_paths, reason = self.run(
             SYSTEM_PROMPT.format(
                 file_name=snip_path.file_path.name,
-                snippet_path=snip_path,
+                snippet_path=str(snip_path),
                 file_snippet=self.repo.get_snippet_content(
-                    snip_path,
+                    str(snip_path),
                     self.surroundings,
                     add_lines=True,
                     add_separators=True,

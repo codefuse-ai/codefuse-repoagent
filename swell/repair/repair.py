@@ -206,7 +206,7 @@ class IssueRepa:
             refiner.disable_debugging()
         refined_paths, reason = refiner.refine(issue, snip_path)
         self.console.printb(
-            f"Snippet path {snip_path} has been refined into: "
+            f"Snippet path {snip_path} has been refined into:\n"
             + ("\n".join(["- " + p for p in refined_paths]) or "Nothing")
         )
         return refined_paths

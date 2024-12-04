@@ -10,7 +10,7 @@ class SnippetPath:
         self._end_line = end
 
     @staticmethod
-    def from_str(snp_path):
+    def from_str(snp_path) -> "SnippetPath":
         f, t = snp_path.split(":")
         s, e = t.split("-")
         return SnippetPath(FilePath(f), int(s), int(e))
