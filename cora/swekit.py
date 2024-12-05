@@ -132,7 +132,7 @@ class SWEKit:
         self.num_thread = num_thread
         self.debug_mode = debug_mode
         self.console = get_boxed_console(
-            box_title="SWEKIT",
+            box_title="SWE-kit",
             box_bg_color="gray50",
             debug_mode=debug_mode,
         )
@@ -168,7 +168,7 @@ class SWEKit:
 
         # Create an RepoAgent to retrieve context and try resolving the issue
         agent = RepoAgent(
-            name="SWEKit",
+            name="SWE-kit",
             repo=repo,
             includes=["*.py"],  # We focus on Python for SWE-bench
             use_llm=self.use_llm,

@@ -166,7 +166,7 @@ def main():
     eval_script, eval_args = parse_eval_script(args)
 
     fixit = RepoAgent(
-        name="FixIt",
+        name="FixIt!",
         repo=repo,
         includes=incl,
         use_llm=llm,
