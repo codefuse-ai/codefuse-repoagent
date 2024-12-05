@@ -1,4 +1,4 @@
-name: swell_venv
+name: cora_venv
 channels:
   - defaults
 dependencies:
