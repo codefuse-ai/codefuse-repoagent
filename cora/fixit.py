@@ -165,8 +165,8 @@ def main():
 
     eval_script, eval_args = parse_eval_script(args)
 
-    swell = RepoAgent(
-        name="SWELL",
+    fixit = RepoAgent(
+        name="FixIt",
         repo=repo,
         includes=incl,
         use_llm=llm,
@@ -177,7 +177,7 @@ def main():
         files_as_context=False,
         debug_mode=args.verbose,
     )
-    swell.run(
+    fixit.run(
         query=issue,
         generation_args={"issue_id": issue_id, "num_retries": args.max_retries},
     )
