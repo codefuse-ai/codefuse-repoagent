@@ -12,6 +12,7 @@ from rich.panel import Panel
 class BoxedConsoleConfigs:
     box_width: int = 300  # Width of the console
     out_dir: Optional[str] = None  # If set, the console will print to a file
+    print_to_console: bool = False  # If print to console when out_dir is enabled
 
 
 class BoxedConsoleBase:
@@ -40,22 +41,31 @@ class MockConsole(BoxedConsoleBase):
 
 
 class FileConsole(BoxedConsoleBase):
-    def __init__(self, *, out_file: str, title: Optional[str]):
+    def __init__(
+        self, *, out_file: str, title: Optional[str], print_to_console: bool = False
+    ):
         self.title = title
         self.out_file = out_file
+        self.print_to_console = print_to_console
 
     def printb(self, message, title=None, *args, **kwargs):
         title = self._make_box_title(title or self.title)
+        long_msg = ""
+        if title:
+            long_msg += f"--- {title} --------\n"
+        long_msg += message
+        long_msg += "\n"
         with open(self.out_file, "a") as fou:
-            if title:
-                fou.write(f"--- {title} --------\n")
-            fou.write(message)
-            fou.write("\n")
+            fou.write(long_msg)
+        if self.print_to_console:
+            print(long_msg)
 
     def print(self, message):
+        long_msg = message + "\n"
         with open(self.out_file, "a") as fou:
-            fou.write(message)
-            fou.write("\n")
+            fou.write(long_msg)
+        if self.print_to_console:
+            print(long_msg)
 
 
 class BoxedConsole(BoxedConsoleBase):
@@ -92,10 +102,11 @@ def get_boxed_console(
             return FileConsole(
                 out_file=str(
                     (
-                        Path(BoxedConsoleConfigs.out_dir) / (console_name + ".log")
+                        Path(BoxedConsoleConfigs.out_dir) / (console_name + ".traj.log")
                     ).resolve()
                 ),
                 title=box_title,
+                print_to_console=BoxedConsoleConfigs.print_to_console,
             )
         else:
             return BoxedConsole(
