@@ -1,7 +1,9 @@
+import json
 from argparse import ArgumentParser, Action
 from pathlib import Path
 from typing import Tuple, List
 
+from cora.base.console import BoxedConsoleConfigs
 from cora.base.repos import RepoTup
 from cora.llms.factory import LLMConfig
 from cora.repo.repo import Repository
@@ -9,6 +11,11 @@ from cora.repo.repo import Repository
 
 class ArgumentError(ValueError):
     pass
+
+
+def _save_options(args: any, file: Path):
+    with file.open("w") as fou:
+        json.dump(vars(args), fou, ensure_ascii=False, indent=2)
 
 
 def parse_repo(args: any) -> Repository:
@@ -64,6 +71,21 @@ def parse_llms(args: any) -> LLMConfig:
 
 def parse_perf(args: any) -> Tuple[int, int]:
     return args.num_procs, args.num_threads
+
+
+def parse_logging(args: any):
+    if args.log_dir:
+        log_dir = Path(args.log_dir)
+        if log_dir.exists():
+            raise ArgumentError(f"The logging directory already exists: {log_dir}")
+        log_dir.mkdir(exist_ok=False, parents=False)
+        _save_options(args, file=(log_dir / "commands.json"))
+        args.verbose = True  # We enable verbose mode if log_dir is present
+        BoxedConsoleConfigs.out_dir = str(log_dir.resolve())
+        BoxedConsoleConfigs.print_to_console = True
+    else:
+        log_dir = None
+    return log_dir, args.verbose
 
 
 def make_repo_options(parser: ArgumentParser) -> List[Action]:
@@ -163,12 +185,19 @@ def make_perf_options(parser: ArgumentParser) -> List[Action]:
     ]
 
 
-def make_misc_options(parser: ArgumentParser) -> List[Action]:
+def make_logging_options(parser: ArgumentParser) -> List[Action]:
     return [
         parser.add_argument(
             "--verbose",
             action="store_true",
             help="Enable verbose logging (this includes all interactions with the LM)",
+        ),
+        parser.add_argument(
+            "--log-dir",
+            type=str,
+            default="",
+            help="Store trajectories and logs into the assigned directory;"
+            "This option also implies --verbose",
         ),
     ]
 
@@ -183,6 +212,6 @@ def make_common_options(parser: ArgumentParser) -> List[Action]:
         *make_model_options(parser),
         # Options related to performance
         *make_perf_options(parser),
-        # Misc options
-        *make_misc_options(parser),
+        # Logging options
+        *make_logging_options(parser),
     ]

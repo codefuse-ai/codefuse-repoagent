@@ -15,7 +15,11 @@ from cora.base.paths import FilePath
 from cora.config import CoraConfig
 from cora.llms.factory import LLMFactory, LLMConfig
 from cora.repo.repo import Repository
-from cora.utils.event import EventEmitter
+from cora.retrv.events import (
+    RetrieverCallbacks as Callbacks,
+    RetrieverEvents as Events,
+)
+from cora.utils import event
 from cora.utils.misc import CannotReachHereError
 from cora.utils.parallel import parallel
 
@@ -23,7 +27,7 @@ DEBUG_OUTPUT_LOGGING_COLOR = "grey50"
 DEBUG_OUTPUT_LOGGING_TITLE = "Retriever"
 
 
-class Retriever(EventEmitter, rag.RetrieverBase):
+class Retriever(event.EventEmitter, rag.RetrieverBase):
     def __init__(
         self,
         repo: Repository,
@@ -44,6 +48,27 @@ class Retriever(EventEmitter, rag.RetrieverBase):
             debug_mode=debug_mode,
         )
 
+    def add_callback(self, cb: Callbacks):
+        cb.register_to(self)
+
+    @event.hook_method_to_emit_events(
+        before_event=Events.EVENT_QRW_START.value,
+        after_event=Events.EVENT_QRW_FINISH.value,
+    )
+    def rewrite_query(self, query: str):
+        self.console.printb(f"QRW: Rewriting the user query using {self.rewriter} ...")
+        query_r = (
+            self.rewriter.rewrite(query)
+            if len(query.split()) > CoraConfig.QRW_WORD_SIZE
+            else query
+        )
+        self.console.printb(f"The query after rewriting is: {query_r}")
+        return query_r
+
+    @event.hook_method_to_emit_events(
+        before_event=Events.EVENT_EDL_START.value,
+        after_event=Events.EVENT_EDL_FINISH.value,
+    )
     def lookup_entity_definition(self, query: str, limit: int) -> List[str]:
         self.console.printb(
             "EDL: Analyzing the query to find possible entities and their definition files ..."
@@ -93,6 +118,10 @@ class Retriever(EventEmitter, rag.RetrieverBase):
 
         return defn_files
 
+    @event.hook_method_to_emit_events(
+        before_event=Events.EVENT_KWS_START.value,
+        after_event=Events.EVENT_KWS_FINISH.value,
+    )
     def search_keyword_engine(
         self, query: str, limit: int, skipping: Optional[Set[str]] = None
     ):
@@ -111,6 +140,10 @@ class Retriever(EventEmitter, rag.RetrieverBase):
 
         return files
 
+    @event.hook_method_to_emit_events(
+        before_event=Events.EVENT_FTE_START.value,
+        after_event=Events.EVENT_FTE_FINISH.value,
+    )
     def explore_file_tree(
         self,
         query: str,
@@ -180,6 +213,10 @@ class Retriever(EventEmitter, rag.RetrieverBase):
 
         return dep_files
 
+    @event.hook_method_to_emit_events(
+        before_event=Events.EVENT_FPS_START.value,
+        after_event=Events.EVENT_FPS_FINISH.value,
+    )
     def score_files_by_preview(
         self, query: str, file_list: List[str], num_proc: int = 1
     ) -> Dict[int, List[str]]:
@@ -213,17 +250,14 @@ class Retriever(EventEmitter, rag.RetrieverBase):
         self.console.printb(f"File {file} is scored {score}: {reason}")
         return score, reason
 
+    @event.hook_method_to_emit_events(
+        before_event=Events.EVENT_START.value, after_event=Events.EVENT_FINISH.value
+    )
     def retrieve(
         self, query, files_only: bool = False, num_proc: int = 1, **kwargs
     ) -> List[str]:
         # Rewrite the query; this may involve summarization, etc.
-        self.console.printb(f"QRW: Rewriting the user query using {self.rewriter} ...")
-        query_r = (
-            self.rewriter.rewrite(query)
-            if len(query.split()) > CoraConfig.QRW_WORD_SIZE
-            else query
-        )
-        self.console.printb(f"The query after rewriting is: {query_r}")
+        query_r = self.rewrite_query(query)
 
         # Analyze the query and find all plausible definition files
         edl_res = self.lookup_entity_definition(

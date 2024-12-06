@@ -234,7 +234,7 @@ def parse_args():
 
     options.make_model_options(parser)
     options.make_perf_options(parser)
-    options.make_misc_options(parser)
+    options.make_logging_options(parser)
 
     parser.add_argument(
         "--max-retries",

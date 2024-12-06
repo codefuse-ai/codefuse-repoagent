@@ -1,7 +1,8 @@
 from argparse import ArgumentParser
+from pathlib import Path
 from typing import List, Optional
 
-from cora import options
+from cora import options, results
 from cora.agents.rewrite.base import RewriterBase
 from cora.agents.rewrite.dont import DontRewrite
 from cora.agents.rewrite.issue import IssueSummarizer
@@ -21,11 +22,13 @@ def retrieve(
     files_only: bool = False,
     num_proc: int = 1,
     includes: Optional[List[str]] = None,
+    debug_mode: bool = False,
+    log_dir: Optional[Path] = None,
 ) -> List[str]:
     console = get_boxed_console(
         box_title="CFAR",
         box_bg_color=retrv.DEBUG_OUTPUT_LOGGING_COLOR,
-        debug_mode=True,
+        debug_mode=debug_mode,
     )
 
     console.printb(
@@ -37,9 +40,12 @@ def retrieve(
         repo,
         use_llm=use_llm,
         includes=includes,
-        debug_mode=True,
+        debug_mode=debug_mode,
         rewriter=rewriter,
     )
+
+    if log_dir:
+        retriever.add_callback(results.CfarResult(log_dir / "cfar_res.json"))
 
     snip_ctx = retriever.retrieve(
         query,
@@ -75,11 +81,10 @@ def main():
 
     repo = options.parse_repo(args)
     query, incl = options.parse_query(args)
-
     llm = options.parse_llms(args)
-
     procs, threads = options.parse_perf(args)
     CoraConfig.SCR_ENUM_FNDR_NUM_THREADS = threads
+    log_dir, verbose = options.parse_logging(args)
 
     if args.query_as_issue:
         rewriter = IssueSummarizer(repo, use_llm=llm)
@@ -95,6 +100,8 @@ def main():
         includes=incl,
         files_only=args.files_only,
         rewriter=rewriter,
+        log_dir=log_dir,
+        debug_mode=verbose,
     )
 
 
