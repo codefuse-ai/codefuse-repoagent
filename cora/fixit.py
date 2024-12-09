@@ -3,13 +3,14 @@ from argparse import ArgumentParser
 from pathlib import Path
 from typing import Optional, List, Tuple, cast
 
-from cora import options
+from cora import options, results
 from cora.agent import RepoAgent
 from cora.agents.rewrite.issue import IssueSummarizer
 from cora.base.console import BoxedConsoleBase
 from cora.base.rag import GeneratorBase
 from cora.options import ArgumentError
 from cora.repair import repair
+from cora.repair.events import IssueRepaCallbacks
 from cora.repo.repo import Repository
 from cora.utils import cmdline
 
@@ -64,6 +65,10 @@ class _Generator(GeneratorBase):
         super().__init__()
         self.eval_script = eval_script
         self.eval_args = eval_args
+        self.callbacks = []
+
+    def add_callback(self, cbs: IssueRepaCallbacks):
+        self.callbacks.append(cbs)
 
     def generate(self, issue: str, snip_ctx: List[str], **kwargs) -> any:
         assert self.agent, "RepoAgent hasn't been injected. Please invoke inject_agent() before calling this method"
@@ -75,6 +80,8 @@ class _Generator(GeneratorBase):
             use_llm=agent.use_llm,
             debug_mode=agent.debug_mode,
         )
+        for cbs in self.callbacks:
+            repa.add_callbacks(cbs)
         console = agent.console
         if self.eval_script:
             console.printb(
@@ -158,12 +165,10 @@ def main():
     repo = options.parse_repo(args)
     issue, incl = options.parse_query(args)
     issue_id = args.issue_id
-
     llm = options.parse_llms(args)
-
     procs, threads = options.parse_perf(args)
-
     eval_script, eval_args = parse_eval_script(args)
+    log_dir, verbose = options.parse_logging(args)
 
     fixit = RepoAgent(
         name="FixIt!",
@@ -175,8 +180,13 @@ def main():
         num_proc=procs,
         num_thread=threads,
         files_as_context=False,
-        debug_mode=args.verbose,
+        debug_mode=verbose,
     )
+    if log_dir:
+        fixit.cfar.add_callback(results.CfarResult(log_dir / "cfar_res.json"))
+        cast(_Generator, fixit.generator).add_callback(
+            results.IssueRepaResult(log_dir / "fixit_res.json")
+        )
     fixit.run(
         query=issue,
         generation_args={"issue_id": issue_id, "num_retries": args.max_retries},

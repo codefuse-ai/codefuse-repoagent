@@ -7,10 +7,15 @@ from typing import Protocol, Optional, List
 from cora.base.console import get_boxed_console
 from cora.base.repos import RepoTup
 from cora.llms.factory import LLMFactory, LLMConfig
+from cora.repair.events import (
+    IssueRepaEvents as Events,
+    IssueRepaCallbacks as Callbacks,
+)
 from cora.repair.patch import PatchGen
 from cora.repair.refine import SnipRefiner
 from cora.repo.repo import Repository
-from cora.utils import cmdline
+from cora.utils import cmdline, event
+from cora.utils.event import EventEmitter
 from cora.utils.parallel import parallel
 
 DEBUG_OUTPUT_LOGGING_COLOR = "grey50"
@@ -29,7 +34,7 @@ class PatchEval(Protocol):
     ) -> bool: ...
 
 
-class IssueRepa:
+class IssueRepa(EventEmitter):
     def __init__(self, repo: Repository, use_llm: LLMConfig, debug_mode: bool = False):
         super().__init__()
         self.repo = repo
@@ -41,6 +46,13 @@ class IssueRepa:
         )
         self.debug_mode = debug_mode
 
+    def add_callbacks(self, cbs: Callbacks):
+        cbs.register_to(self)
+
+    @event.hook_method_to_emit_events(
+        before_event=Events.EVENT_GEN_PATCH_START.value,
+        after_event=Events.EVENT_GEN_PATCH_FINISH.value,
+    )
     def gen_patch(self, issue: str, snip_paths: List[str]) -> Optional[str]:
         self.console.printb(
             "Try generating a plausible patch with below snippet context:\n"
@@ -59,6 +71,10 @@ class IssueRepa:
             return None
         return patches[0]
 
+    @event.hook_method_to_emit_events(
+        before_event=Events.EVENT_EVAL_PATCH_START.value,
+        after_event=Events.EVENT_EVAL_PATCH_FINISH.value,
+    )
     def eval_patch(
         self,
         issue_id: str,
@@ -125,6 +141,10 @@ class IssueRepa:
         )
         return patch, passed
 
+    @event.hook_method_to_emit_events(
+        before_event=Events.EVENT_START.value,
+        after_event=Events.EVENT_FINISH.value,
+    )
     def try_repair(
         self,
         issue: str,
@@ -138,6 +158,10 @@ class IssueRepa:
     ) -> Optional[str]:
         refined_paths: List[str] = []
         for retry in range(num_retries):
+            self.emit(
+                Events.EVENT_NEXT_ROUND.value, curr_round=retry, num_rounds=num_retries
+            )
+
             patch, passed = self.gen_then_eval(
                 issue,
                 issue_id=issue_id,

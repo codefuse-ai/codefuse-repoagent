@@ -1,5 +1,5 @@
 from dataclasses import asdict
-from typing import Optional, List
+from typing import Optional, List, cast
 
 from cora.agents.rewrite.base import RewriterBase
 from cora.base.console import get_boxed_console
@@ -56,6 +56,10 @@ class RepoAgent(RAGBase):
         self.console.printb(
             f"Loaded repository {self.repo.repo_org}/{self.repo.repo_name} from {self.repo.repo_path} ..."
         )
+
+    @property
+    def cfar(self) -> retrv.Retriever:
+        return cast(retrv.Retriever, self.retriever)
 
     def before_retrieving(self, query: str, **kwargs):
         self.console.printb(
