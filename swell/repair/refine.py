@@ -194,11 +194,14 @@ class SnipRefiner(AgentBase):
         reason = response["reason"]
         file_path = snip_path.file_path
 
+        if not lines:
+            return [], None
+
         # We return all chosen lines
         return [str(SnippetPath(file_path, lno, lno + 1)) for lno in lines], reason
 
     def _default_result_when_reaching_max_chat_round(self):
         return (
-            None,
+            [],
             "The model have reached the max number of chat round and is unable to score their relevance.",
         )
