@@ -8,7 +8,7 @@ from typing import Tuple, List, Optional, cast
 
 from datasets import load_dataset
 
-from cora import options
+from cora import options, results
 from cora.agent import RepoAgent
 from cora.agents.rewrite.issue import IssueSummarizer
 from cora.base.console import get_boxed_console
@@ -17,6 +17,7 @@ from cora.base.repos import RepoTup
 from cora.llms.factory import LLMConfig
 from cora.options import ArgumentError
 from cora.repair import repair
+from cora.repair.events import IssueRepaCallbacks
 from cora.repo.repo import Repository
 from cora.utils import cmdline
 
@@ -83,6 +84,10 @@ class _Generator(GeneratorBase):
         super().__init__()
         self.dataset_id = dataset_id
         self.dataset_split = dataset_split
+        self.callbacks = []
+
+    def add_callback(self, cbs: IssueRepaCallbacks):
+        self.callbacks.append(cbs)
 
     def generate(self, issue: str, context: List[str], **kwargs) -> any:
         assert self.agent, "RepoAgent hasn't been injected. Please invoke inject_agent() before calling this method"
@@ -92,6 +97,8 @@ class _Generator(GeneratorBase):
         repa = repair.IssueRepa(
             agent.repo, use_llm=agent.use_llm, debug_mode=agent.debug_mode
         )
+        for cbs in self.callbacks:
+            repa.add_callbacks(cbs)
         agent.console.printb(
             "Generating a plausible patch that can pass the SWE-bench testing"
         )
@@ -123,6 +130,7 @@ class SWEKit:
         num_proc: int,
         num_thread: int,
         debug_mode: bool,
+        log_dir: Optional[Path] = None,
     ):
         self.dataset_id = dataset_id
         self.dataset_split = dataset_split
@@ -131,6 +139,7 @@ class SWEKit:
         self.num_proc = num_proc
         self.num_thread = num_thread
         self.debug_mode = debug_mode
+        self.log_dir = log_dir
         self.console = get_boxed_console(
             box_title="SWE-kit",
             box_bg_color="gray50",
@@ -179,6 +188,11 @@ class SWEKit:
             files_as_context=False,
             debug_mode=self.debug_mode,
         )
+        if self.log_dir:
+            agent.cfar.add_callback(results.CfarResult(self.log_dir / "cfar_res.json"))
+            cast(_Generator, agent.generator).add_callback(
+                results.IssueRepaResult(self.log_dir / "swekit_res.json")
+            )
         patch = agent.run(
             query=issue,
             generation_args={"instance_id": instance_id, "num_retries": num_retries},
@@ -186,6 +200,10 @@ class SWEKit:
 
         if should_download_repo:
             shutil.rmtree(repo_path)
+
+        if self.log_dir and patch:
+            with (self.log_dir / "patch.diff").open("w") as fou:
+                fou.write(patch)
 
         return patch
 
@@ -244,14 +262,6 @@ def parse_args():
         help="The max number of allowed attempts for evaluating the generated patch.",
     )
 
-    parser.add_argument(
-        "--output",
-        "-o",
-        type=str,
-        default="",
-        help="Save the generated patch that has passed SWE-bench's evaluation into a patch file",
-    )
-
     return parser.parse_args()
 
 
@@ -271,8 +281,8 @@ def main():
 
     dataset, instance = parse_instance(args)
     use_llm = options.parse_llms(args)
-
     procs, threads = options.parse_perf(args)
+    log_dir, verbose = options.parse_logging(args)
 
     swekit = SWEKit(
         dataset,
@@ -280,17 +290,14 @@ def main():
         use_llm=use_llm,
         num_proc=procs,
         num_thread=threads,
-        debug_mode=args.verbose,
+        log_dir=log_dir,
+        debug_mode=verbose,
     )
-    patch = swekit.run(
+    swekit.run(
         instance,
         num_retries=args.max_retries,
         repo_path=Path(args.repository) if args.repository else None,
     )
-
-    if args.output and patch:
-        with open(args.output, "w") as fou:
-            fou.write(patch)
 
 
 if __name__ == "__main__":
