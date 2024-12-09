@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 from typing import List, cast
 
-from cora import options
+from cora import options, results
 from cora.agent import RepoAgent
 from cora.agents.base import AgentBase
 from cora.agents.reason_agent import R1
@@ -122,10 +122,9 @@ def main():
 
     repo = options.parse_repo(args)
     query, incl = options.parse_query(args)
-
     llm = options.parse_llms(args)
-
     procs, threads = options.parse_perf(args)
+    log_dir, verbose = options.parse_logging(args)
 
     if args.query_as_issue:
         rewriter = IssueSummarizer(repo, use_llm=llm)
@@ -142,8 +141,10 @@ def main():
         num_thread=threads,
         name="RepoQA",
         files_as_context=False,
-        debug_mode=args.verbose,
+        debug_mode=verbose,
     )
+    if log_dir:
+        agent.cfar.add_callback(results.CfarResult(log_dir / "cfar_res.json"))
     agent.run(query=query)
 
 
