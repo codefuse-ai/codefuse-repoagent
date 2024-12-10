@@ -203,6 +203,10 @@ class CoraConfig(_FileConfigMixin, _RetrieverConfigMixin):
     def sanitize_content_in_repository(cls) -> bool:
         return misc.to_bool(cls.get("SANITIZE_CONTENT_IN_REPOSITORY"))
 
+    @classmethod
+    def easydeploy_endpoint_url(cls) -> str:
+        return cls.get("EASYDEPLOY_ENDPOINT")
+
 
 __ENV_LOADED = False
 if not __ENV_LOADED:

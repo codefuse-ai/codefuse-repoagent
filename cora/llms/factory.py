@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 from cora.llms.base import LLMBase
+from cora.llms.easydeploy_ import EasyDeploy
 from cora.llms.huggingface_ import HuggingFace
 from cora.llms.ollama_ import Ollama
 from cora.llms.openai_ import OpenAI
@@ -29,6 +30,7 @@ class LLMFactory:
             "ollama": Ollama,
             "openai": OpenAI,
             "huggingface": HuggingFace,
+            "easydeploy": EasyDeploy,
         }[config.provider](
             config.llm_name,
             debug_mode=config.debug_mode,
