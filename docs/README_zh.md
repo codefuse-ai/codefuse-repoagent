@@ -47,10 +47,18 @@ conda activate cora_venv
 mv env.template .env  # This saves some environment variables
 ```
 
-其次，确保欲使用的大模型处于可用状态：
-- 对于 OpenAI 的模型，请在 `.env` 中配置 API key 等；
-- 对于 Ollama 模型，请在使用 CoRA 前通过 `ollama pull` 下载所需模型；
-- 对于 HuggingFace 模型，要么提前下载好模型，要么在 `.env` 中配置允许 HuggingFace 联网。
+其次，根据下表进行配置，确保欲使用的库/框架及大模型处于可用状态：
+- `√` 代表对应库/框架已经支持。
+- `.` 代表对应库/框架正在支持中或未来即将支持。
+- `x` 代表暂不考虑支持对应库/框架。
+
+|       库/框架       | 状态 | 配置方式                                      |
+|:----------------:|:--:|:------------------------------------------|
+|   [OpenAI](#)    | √  | 在 `.env` 中配置 API key 等环境变量                |
+|   [Ollama](#)    | √  | 在使用 CoRA 前通过 `ollama pull` 下载所需模型并启动      |
+| [HuggingFace](#) | .  | 要么提前下载好模型，要么在 `.env` 中配置允许 HuggingFace 联网 |
+| [EasyDeploy](#)  | .  | 未来将支持                                     |
+
 
 ## 🔍 上下文检索
 

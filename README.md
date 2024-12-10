@@ -47,10 +47,18 @@ conda activate cora_venv
 mv env.template .env  # This saves some environment variables
 ```
 
-Then ensure your models were downloaded or set up some environment variables in:
-- If you'd prefer OpenAI, set up your API key in `.env`
-- If you'd prefer HuggingFace, either enable downloading in `.env` or download your models first
-- If you'd prefer Ollama, pull your models first
+Then follow the below table to setup required library for the model(s) you'd use:
+- `√` means the library was already supported.
+- `.` means the library has not benn supported yet, but will be supported in the future.
+- `x` means the library won't be supported.
+
+|     Library      | Status | Setup instructions                                                                                                                                              |
+|:----------------:|:------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|   [OpenAI](#)    |   √    | Set up the API [key](https://github.com/openai/openai-python/blob/main/README.md#usage) in `.env`                                                               |
+|   [Ollama](#)    |   √    | Pull the models first and start Ollama on the local machine, for example [Llama3.2](https://ollama.com/library/llama3.2)                                        |
+| [HuggingFace](#) |   .    | Either [enable downloading](https://huggingface.co/docs/huggingface_hub/main/en/package_reference/environment_variables) in `.env` or download the models first |
+| [EasyDeploy](#)  |   .    | Will be supported in the future                                                                                                                                 |
+
 
 ## 🔍 Retrieve Context
 
