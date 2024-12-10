@@ -246,7 +246,7 @@ def parse_args():
         "-r",
         type=str,
         default="",
-        help="Path to the buggy repository (with already being checked out to the exact buggy commit) of the issue."
+        help="Path to the buggy repository (with already being checked out to the exact buggy commit) of the issue. "
         "If this option is provided, we will directly use the repository without downloading it from GitHub.",
     )
 

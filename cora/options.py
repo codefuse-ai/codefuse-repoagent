@@ -196,7 +196,7 @@ def make_logging_options(parser: ArgumentParser) -> List[Action]:
             "--log-dir",
             type=str,
             default="",
-            help="Store trajectories and logs into the assigned directory;"
+            help="Store trajectories and logs into the assigned directory; "
             "This option also implies --verbose",
         ),
     ]
