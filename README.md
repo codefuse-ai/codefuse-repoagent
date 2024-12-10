@@ -140,3 +140,9 @@ Below are checkers/hooks we have enabled:
 + MISC: We also apply some misc checkers for example YAML.
 
 <!-- Add "Cite Us" -->
+
+## 👍 Acknowledgements
+
+- [Sweep](https://github.com/sweepai/sweep)
+- [Agentless](https://github.com/OpenAutoCoder/Agentless)
+- [SWE-bench](https://www.swebench.com/)
