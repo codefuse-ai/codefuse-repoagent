@@ -10,7 +10,7 @@ from rich.panel import Panel
 
 @dataclass
 class BoxedConsoleConfigs:
-    box_width: int = 300  # Width of the console
+    box_width: Optional[int] = None  # Width of the console
     out_dir: Optional[str] = None  # If set, the console will print to a file
     print_to_console: bool = False  # If print to console when out_dir is enabled
 
