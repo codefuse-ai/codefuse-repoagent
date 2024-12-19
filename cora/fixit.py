@@ -1,3 +1,4 @@
+import shlex
 import subprocess
 from argparse import ArgumentParser
 from pathlib import Path
@@ -35,7 +36,7 @@ class EvalScript:
         try:
             cmdline.check_call(
                 f"{self.eval_script} "
-                f"{issue_id} {patch_str} "
+                f"{issue_id} {shlex.quote(patch_str)} "
                 f"{original_repo.repo_path} {patched_repo.repo_path} "
                 f"{self.eval_args}",
                 timeout=5 * 60,
