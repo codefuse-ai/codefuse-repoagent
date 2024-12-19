@@ -91,6 +91,52 @@ python -m cora.fixit        \
 
 If an evaluation script (i.e., `-e`) is provided, FixIt! generates a patch until the evaluation script considers the issue has been fixed or FixIt! reaches the max number of allowed attempts. In this context, FixIt! applies the generated patch on the repository and passes the issue and the new repository's path to the evaluation script. Otherwise, FixIt! merely generates a plausible patch without evaluating its correctness.
 
+Below presents a simple evaluation script to save everything passed from FixIt! into `/tmp/test.json` and accepts all patches if there is an "Hello World":
+
+```python
+#! /usr/local/bin/python3
+
+import json
+import sys
+
+if __name__ == "__main__":
+    issue_id = sys.argv[1]
+    patch_str = sys.argv[2]
+    buggy_repo = sys.argv[3]
+    patched_repo = sys.argv[4]
+
+    # Save all arguments passed from FixIt! into /tmp/test.json
+    with open("/tmp/test.json", "w") as fou:
+        json.dump(
+            {
+                "issue_id": issue_id,
+                "patch": patch_str,
+                "buggy_repo": buggy_repo,
+                "new_path": patched_repo,
+            },
+            fou,
+            ensure_ascii=False,
+            indent=2,
+        )
+
+    # We accept the patch if there is an "Hello World"
+    if "Hello World" in patch_str:
+        exit(0)  # Exiting with 0 indicates an acceptance
+    else:
+        exit(1)  # All other exit status imply a rejection
+```
+
+Below is the example content of `/tmp/test.json`:
+
+```json
+{
+  "issue_id": "django__django-11848",
+  "patch": "--- django/utils/http.py\n+++ django/utils/http.py\n@@ -176,7 +176,7 @@\n     try:\n         year = int(m.group('year'))\n         if year < 100:\n-            if year < 70:\n+            if year < 50:\n                 year += 2000\n             else:\n                 year += 1900\n",
+  "buggy_repo": "/tmp/fixit/django_f0adf3b9",
+  "new_path": "/tmp/fixit/patched_django_f0adf3b9"
+}
+```
+
 ## 🐑 Fix SWE-bench (WIP)
 
 > [!WARNING]

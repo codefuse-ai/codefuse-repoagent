@@ -91,6 +91,52 @@ python -m cora.fixit        \
 
 如果提供了评估脚本（即 `-e`），FixIt! 将使用该脚本评估所生成的补丁是否能够通过该脚本的测试。若未通过，FixIt! 将重试，直到生成能够通过该脚本的补丁或达到被允许尝试的最大尝试次数（即 `-M`）。若没有提供评估脚本，，FixIt! 仅生成一个看似合理的补丁，而不评估其正确性。
 
+下面展示了一个评估脚本的简单样例，这个评估脚本首先将 FixIt! 传递给它的所有参数存储到 `/tmp/test.json`，然后检查补丁中是否包含 "Hello World" 子串。所有包含该子串的补丁将被视为通过测试。
+
+```python
+#! /usr/local/bin/python3
+
+import json
+import sys
+
+if __name__ == "__main__":
+    issue_id = sys.argv[1]
+    patch_str = sys.argv[2]
+    buggy_repo = sys.argv[3]
+    patched_repo = sys.argv[4]
+
+    # Save all arguments passed from FixIt! into /tmp/test.json
+    with open("/tmp/test.json", "w") as fou:
+        json.dump(
+            {
+                "issue_id": issue_id,
+                "patch": patch_str,
+                "buggy_repo": buggy_repo,
+                "new_path": patched_repo,
+            },
+            fou,
+            ensure_ascii=False,
+            indent=2,
+        )
+
+    # We accept the patch if there is an "Hello World"
+    if "Hello World" in patch_str:
+        exit(0)  # Exiting with 0 indicates an acceptance
+    else:
+        exit(1)  # All other exit status imply a rejection
+```
+
+下面展示了 `/tmp/test.json` 的内容:
+
+```json
+{
+  "issue_id": "django__django-11848",
+  "patch": "--- django/utils/http.py\n+++ django/utils/http.py\n@@ -176,7 +176,7 @@\n     try:\n         year = int(m.group('year'))\n         if year < 100:\n-            if year < 70:\n+            if year < 50:\n                 year += 2000\n             else:\n                 year += 1900\n",
+  "buggy_repo": "/tmp/fixit/django_f0adf3b9",
+  "new_path": "/tmp/fixit/patched_django_f0adf3b9"
+}
+```
+
 ## 🐑 SWE-bench (WIP)
 
 > [!WARNING]
