@@ -1,4 +1,5 @@
 import difflib
+import os
 import re
 from collections import OrderedDict
 from typing import Tuple, Optional, List
@@ -117,8 +118,9 @@ class PatchGen(AgentBase):
                 difflib.unified_diff(
                     old_cont.splitlines(keepends=True),
                     new_cont.splitlines(keepends=True),
-                    fromfile=edited_file,
-                    tofile=edited_file,
+                    # Follow git to preceding an "a/" and a "b" to the from and to file
+                    fromfile=os.path.join("a", edited_file),
+                    tofile=os.path.join("b", edited_file),
                 )
             )
             if not udiff:

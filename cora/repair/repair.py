@@ -101,7 +101,8 @@ class IssueRepa(EventEmitter):
             self.repo.repo_path, patched_repo.repo_path, dirs_exist_ok=False
         )
         try:
-            cmdline.check_call(f"patch -p0 -d {patched_repo.repo_path} -i {patch_file}")
+            # Use -p1 instead of -p0 as there's an "a/" and a "b/" preceding the source and target file
+            cmdline.check_call(f"patch -p1 -d {patched_repo.repo_path} -i {patch_file}")
         except subprocess.CalledProcessError as e:
             self.console.printb(f"The generated patch is invalid: {e.stderr}")
             return False
