@@ -54,6 +54,8 @@ class TextPreview(FilePreview):
 
     @classmethod
     def preview_line_ex(cls, line_number, line):
+        if not line:
+            return cls.preview_line(line_number, line)
         sentences = line.split(".")  # TODO Use NLTK's sent_tokenize() ??
         if sentences[-1] == "":
             sentences = sentences[:-1]
