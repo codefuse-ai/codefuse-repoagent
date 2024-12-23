@@ -112,7 +112,7 @@ if __name__ == "__main__":
                 "issue_id": issue_id,
                 "patch": patch_str,
                 "buggy_repo": buggy_repo,
-                "new_path": patched_repo,
+                "patched_repo": patched_repo,
             },
             fou,
             ensure_ascii=False,
@@ -131,9 +131,9 @@ Below is the example content of `/tmp/test.json`:
 ```json
 {
   "issue_id": "django__django-11848",
-  "patch": "--- django/utils/http.py\n+++ django/utils/http.py\n@@ -176,7 +176,7 @@\n     try:\n         year = int(m.group('year'))\n         if year < 100:\n-            if year < 70:\n+            if year < 50:\n                 year += 2000\n             else:\n                 year += 1900\n",
+  "patch": "diff --git a/django/utils/http.py b/django/utils/http.py\n--- a/django/utils/http.py\n+++ b/django/utils/http.py\n@@ -176,7 +176,7 @@\n     try:\n         year = int(m.group('year'))\n         if year < 100:\n-            if year < 70:\n+            if year < 50:\n                 year += 2000\n             else:\n                 year += 1900\n",
   "buggy_repo": "/tmp/fixit/django_f0adf3b9",
-  "new_path": "/tmp/fixit/patched_django_f0adf3b9"
+  "patched_repo": "/tmp/fixit/patched_django_f0adf3b9"
 }
 ```
 
