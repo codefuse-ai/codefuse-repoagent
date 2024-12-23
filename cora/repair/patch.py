@@ -114,17 +114,20 @@ class PatchGen(AgentBase):
                 self.console.printb("The above edit command is invalid")
                 continue
             self.console.printb(f"The above edit command is for: {edited_file}")
+            from_file = os.path.join("a", edited_file)
+            to_file = os.path.join("b", edited_file)
             udiff = "".join(
                 difflib.unified_diff(
                     old_cont.splitlines(keepends=True),
                     new_cont.splitlines(keepends=True),
                     # Follow git to preceding an "a/" and a "b" to the from and to file
-                    fromfile=os.path.join("a", edited_file),
-                    tofile=os.path.join("b", edited_file),
+                    fromfile=from_file,
+                    tofile=to_file,
                 )
             )
             if not udiff:
                 continue
+            udiff = f"diff --git {from_file} {to_file}\n" + udiff
             patch.append(udiff)
         if not patch:
             self.console.printb("No valid edit commands found in LLM's response")
