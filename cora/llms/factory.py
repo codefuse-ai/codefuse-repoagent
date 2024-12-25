@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Literal
 
+from cora.llms.anthropic_ import Anthropic
 from cora.llms.base import LLMBase
 from cora.llms.easydeploy_ import EasyDeploy
 from cora.llms.huggingface_ import HuggingFace
@@ -29,6 +30,7 @@ class LLMFactory:
         return {
             "ollama": Ollama,
             "openai": OpenAI,
+            "anthropic": Anthropic,
             "huggingface": HuggingFace,
             "easydeploy": EasyDeploy,
         }[config.provider](

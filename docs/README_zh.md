@@ -55,6 +55,7 @@ mv env.template .env  # This saves some environment variables
 |       库/框架       | 状态  | 配置方式                                      |
 |:----------------:|:---:|:------------------------------------------|
 |   [OpenAI](#)    | `√` | 在 `.env` 中配置 API key 等环境变量                |
+|  [Anthropic](#)  |   `√`   | 在 `.env` 中配置 API key 等环境变量                |
 |   [Ollama](#)    | `√` | 在使用 CoRA 前通过 `ollama pull` 下载所需模型并启动      |
 | [HuggingFace](#) | `.` | 要么提前下载好模型，要么在 `.env` 中配置允许 HuggingFace 联网 |
 | [EasyDeploy](#)  | `.` | 未来将支持                                     |
